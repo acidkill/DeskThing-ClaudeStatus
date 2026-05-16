@@ -2,7 +2,7 @@
 
 Live Claude Code session and weekly usage meters with a mood-driven splash, ported from the [Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) ESP32 dashboard to the [Spotify Car Thing](https://github.com/ItsRiprod/DeskThing) running on the DeskThing platform.
 
-This is a **scaffold** — usage polling, mascot animations, and host-keystroke actions land in subsequent phases. See `CLAUDE.md` (local, gitignored) for the full design brief and `CHANGELOG.md` for what has shipped.
+This is the **server core**. Client UI screens (UsageScreen, SplashScreen, SettingsScreen) land in Phase 5. See `CLAUDE.md` (local, gitignored) for the full design brief and `CHANGELOG.md` for what has shipped.
 
 ## Purpose
 
@@ -41,7 +41,8 @@ npm run typecheck  # runs the client and server tsconfig projects
 
 - **No usage updates:** check the credentials path in settings and confirm `~/.claude/.credentials.json` exists on the host. Server logs are prefixed `[Clawdmeter Server]`.
 - **HTTP 429:** the server backs off exponentially up to `pollIntervalSec × 8`. Raise the poll interval if you hit this often.
-- **Mappings don't fire:** confirm the actions appear in the DeskThing mappings UI; on builds without host-keystroke dispatch, only the in-app actions will work.
+- **Mappings don't fire host keys:** known limitation — the current `@deskthing/server` SDK (0.11) does not expose a host-keystroke API. The four Clawdmeter actions register and fire (visible in the mappings UI, and the app receives an `action:fired` event), but `clawd:voice_ptt` and `clawd:mode_toggle` will not actually send Space / Shift+Tab to your focused window. Track upstream for when the DeskThing server adds keystroke dispatch.
+- **Mappings don't appear at all:** check `npm run build` output for a successful action registration log line on first launch, and confirm the app is enabled in the DeskThing server UI.
 
 ## Licensing
 
