@@ -1,0 +1,42 @@
+{
+  "name": "clawdmeter-deskthing",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "description": "Clawdmeter port for the Spotify Car Thing running on the DeskThing platform.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev": "npx @deskthing/cli dev --vite",
+    "build": "npx @deskthing/cli package",
+    "typecheck": "tsc --build && tsc --project tsconfig.server.json --noEmit",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@deskthing/client": "latest",
+    "@deskthing/server": "latest",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@deskthing/cli": "latest",
+    "@deskthing/types": "latest",
+    "@eslint/js": "^9.9.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.0.1",
+    "vite": "^5.4.15"
+  }
+}
