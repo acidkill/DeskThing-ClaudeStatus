@@ -1,0 +1,59 @@
+# Project-local system prompt — kept out of the repo by design
+CLAUDE.md
+
+# Node / package managers
+node_modules/
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+.npm/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output (Vite / TypeScript / DeskThing bundle)
+dist/
+dist-ssr/
+build/
+out/
+.vite/
+*.tsbuildinfo
+.deskthing/
+*.deskthing.zip
+
+# Environment & secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/.credentials.json
+
+# Editor / OS noise
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & test/coverage artifacts
+logs/
+*.log
+coverage/
+.nyc_output/
+.eslintcache
+.stylelintcache
+
+# Optional asset workspace — sprites/fonts not safe to redistribute
+assets-proprietary/
+
+# Local Claude Code / agent scratch
+.claude/
+!.claude/settings.json
+!.claude/settings.local.json.example
