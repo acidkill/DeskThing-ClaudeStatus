@@ -28,10 +28,13 @@ export type SettingsSnapshot = {
   usageWarningPct: number;
 };
 
+export type ActionId = (typeof ACTION_IDS)[keyof typeof ACTION_IDS];
+
 export type ServerToClient =
   | { type: 'usage'; payload: UsagePayload }
   | { type: 'error'; payload: ErrorPayload }
-  | { type: 'settings'; payload: SettingsSnapshot };
+  | { type: 'settings'; payload: SettingsSnapshot }
+  | { type: 'action:fired'; payload: { id: ActionId } };
 
 export type ClientToServer =
   | { type: 'request:refresh' }
