@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #0b0d10;
+  color: #e6e8eb;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+button {
+  background: transparent;
+  border: none;
+}
+button:focus,
+button:active {
+  outline: none;
+}
