@@ -2,10 +2,12 @@ import { DeskThing } from '@deskthing/server';
 import { type Action, type ActionCallback, DESKTHING_EVENTS } from '@deskthing/types';
 
 import { ACTION_IDS, type ServerToClient } from '../shared/messages';
+import type { KeyDispatcher } from './keys';
 import { log } from './log';
 
 type Send = (msg: ServerToClient) => void;
 type OnRefresh = () => Promise<void> | void;
+type GetKeyDispatcher = () => KeyDispatcher | null;
 
 const ACTION_VERSION = '0.1.0';
 const ACTION_VERSION_CODE = 1;
@@ -29,13 +31,13 @@ const ACTIONS: ReadonlyArray<Action> = [
   buildAction(
     ACTION_IDS.voicePtt,
     'Voice push-to-talk',
-    'While held, sends Space to Claude Code on the host (voice mode push-to-talk).',
+    'Sends Space to the focused host window (Claude Code voice push-to-talk).',
     { tag: 'basic' },
   ),
   buildAction(
     ACTION_IDS.modeToggle,
     'Toggle Claude Code mode',
-    'Sends Shift+Tab to Claude Code on the host (cycles auto-accept / plan modes).',
+    'Sends Shift+Tab to the focused host window (cycles auto-accept / plan modes).',
     { tag: 'basic' },
   ),
   buildAction(
@@ -57,7 +59,11 @@ const isClawdAction = (id: string | undefined): id is (typeof ACTION_IDS)[keyof 
   return (Object.values(ACTION_IDS) as string[]).includes(id);
 };
 
-export const setupActions = (deps: { send: Send; onRefresh: OnRefresh }): (() => void) => {
+export const setupActions = (deps: {
+  send: Send;
+  onRefresh: OnRefresh;
+  getKeyDispatcher: GetKeyDispatcher;
+}): (() => void) => {
   for (const action of ACTIONS) {
     DeskThing.registerAction(action);
   }
@@ -74,14 +80,18 @@ export const setupActions = (deps: { send: Send; onRefresh: OnRefresh }): (() =>
       case ACTION_IDS.refreshNow:
         void deps.onRefresh();
         return;
-      case ACTION_IDS.voicePtt:
-      case ACTION_IDS.modeToggle:
-        // Host-keystroke dispatch is not exposed by @deskthing/server today, so
-        // we only surface a client-visible event and document the limitation
-        // in README. See CLAUDE.md §4.
+      case ACTION_IDS.voicePtt: {
         deps.send({ type: 'action:fired', payload: { id } });
-        log.warn('host keystroke not dispatched (SDK lacks API)', { id });
+        const keys = deps.getKeyDispatcher();
+        if (keys) void keys.press({ key: 'space' });
         return;
+      }
+      case ACTION_IDS.modeToggle: {
+        deps.send({ type: 'action:fired', payload: { id } });
+        const keys = deps.getKeyDispatcher();
+        if (keys) void keys.press({ key: 'tab', shift: true });
+        return;
+      }
       case ACTION_IDS.cycleAnimation:
         deps.send({ type: 'action:fired', payload: { id } });
         return;

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file. Format: Kee
 
 ## [Unreleased]
 
+### Added (Phase 9 — host keystrokes)
+- `server/keys.ts`: platform-aware keystroke dispatcher. Probes the right tool on startup (`osascript` on macOS, `xdotool`/`wtype`/`ydotool` on Linux — Wayland-aware via `WAYLAND_DISPLAY`, `powershell` SendKeys on Windows), shells out with a 200 ms timeout, and falls back to `off` when nothing is available. No native modules bundled.
+- `hostKeystrokeBackend` setting (`auto | osascript | xdotool | wtype | ydotool | powershell | off`, default `auto`) exposed via DeskThing settings UI. Hot-reloads when changed — the dispatcher re-resolves on settings update.
+- `server/actions.ts` now actually dispatches Space (for `clawd:voice_ptt`) and Shift+Tab (for `clawd:mode_toggle`) through the resolved backend, alongside the existing `action:fired` client event. Dispatch failures are logged but never thrown back into the action handler.
+- 18 new Vitest cases in `tests/server/keys.test.ts` covering: explicit-vs-`off` short-circuit, per-platform probe order, Wayland preference flip, fallback to `off` on probe failure, the exact CLI args for each dispatcher (`osascript` System Events keystroke + key code 48 for Shift+Tab, `xdotool` `space`/`shift+Tab`, `wtype` `-M shift -k Tab -m shift`, `powershell` SendKeys `+{TAB}`), and that dispatcher failures don't propagate. `node:child_process` and `node:os.platform` are mocked via `vi.hoisted`.
+- README updated: removed the "host-keystroke limitation" section, replaced with a per-platform prerequisite table, troubleshooting tip keyed on the new `host keystroke backend resolved` log line, settings reference row for `hostKeystrokeBackend`.
+
 ### Added
 - Repository scaffold: Vite + React 18 + TypeScript + Tailwind 3, DeskThing CLI scripts, strict tsconfig with `noUncheckedIndexedAccess`.
 - `deskthing/manifest.json` for app id `clawdmeter`, server/client v11 compatibility.
@@ -69,7 +76,7 @@ All notable changes to this project will be documented in this file. Format: Kee
 | 10.2 | Bundle installs into a DeskThing dev instance without manifest errors | ⏸ requires live DeskThing server |
 | 10.3 | Usage screen receives `usage` within `pollIntervalSec + 5` and renders both bars + countdowns | ⏸ requires live DeskThing server (poller logic covered by unit tests) |
 | 10.4 | Splash mascot visibly changes group on mood change / override | ⏸ requires live DeskThing server (mood logic covered by unit tests) |
-| 10.5 | Actions appear in the mappings UI and dispatch keystrokes — or limitation documented | **✅ documented** (host-keystroke dispatch genuinely missing from `@deskthing/server` 0.11; README + LICENSING + this changelog all surface it) |
+| 10.5 | Actions appear in the mappings UI and dispatch keystrokes — or limitation documented | **✅ implemented** (Phase 9: `server/keys.ts` dispatches Space and Shift+Tab via `osascript`/`xdotool`/`wtype`/`ydotool`/`powershell`; `hostKeystrokeBackend` setting lets users override or disable; per-platform prereqs documented in README) |
 | 10.6 | README covers purpose / setup / settings / troubleshooting / licensing | **✅ verified** |
 | 10.7 | No proprietary Anthropic fonts or Clawd mascot art in repo | **✅ verified** (original Pip mascot only; system-font fallbacks) |
 | 10.8 | No credentials, tokens, or full API responses in any log output | **✅ verified** (`server/log.ts` redacts; covered by code review — never logs token values, response bodies, or full headers) |

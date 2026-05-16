@@ -24,6 +24,7 @@
   "settings.splashRotateSec": "Splash rotate",
   "settings.moodOverride": "Mood override",
   "settings.warningThreshold": "Warning threshold",
+  "settings.hostKeystrokeBackend": "Host keystroke backend",
   "settings.refresh": "Refresh now",
   "settings.cycleMascot": "Cycle mascot",
   "settings.lastError": "Last error",

@@ -62,6 +62,23 @@ export const setupSettings = (): void => {
       max: 100,
       step: 1,
     },
+    [SETTING_KEYS.hostKeystrokeBackend]: {
+      id: SETTING_KEYS.hostKeystrokeBackend,
+      label: 'Host keystroke backend',
+      description:
+        'How clawd:voice_ptt and clawd:mode_toggle dispatch keystrokes to the host. Auto probes platform tools; set off to disable. Linux needs xdotool (X11) or wtype/ydotool (Wayland).',
+      type: SETTING_TYPES.SELECT,
+      value: DEFAULT_SETTINGS.hostKeystrokeBackend,
+      options: [
+        { label: 'Auto (detect platform)', value: 'auto' },
+        { label: 'macOS (osascript)', value: 'osascript' },
+        { label: 'Linux X11 (xdotool)', value: 'xdotool' },
+        { label: 'Linux Wayland (wtype)', value: 'wtype' },
+        { label: 'Linux Wayland (ydotool)', value: 'ydotool' },
+        { label: 'Windows (PowerShell SendKeys)', value: 'powershell' },
+        { label: 'Off (no host keystrokes)', value: 'off' },
+      ],
+    },
   };
 
   DeskThing.initSettings(settings);
@@ -102,6 +119,25 @@ const moodOverrideOrDefault = (
   return fallback;
 };
 
+const keystrokeBackendOrDefault = (
+  raw: unknown,
+  fallback: SettingsSnapshot['hostKeystrokeBackend'],
+): SettingsSnapshot['hostKeystrokeBackend'] => {
+  const allowed: ReadonlyArray<SettingsSnapshot['hostKeystrokeBackend']> = [
+    'auto',
+    'osascript',
+    'xdotool',
+    'wtype',
+    'ydotool',
+    'powershell',
+    'off',
+  ];
+  if (typeof raw === 'string' && (allowed as ReadonlyArray<string>).includes(raw)) {
+    return raw as SettingsSnapshot['hostKeystrokeBackend'];
+  }
+  return fallback;
+};
+
 export const readSettingsSnapshot = (
   raw: Record<string, { value?: unknown } | undefined> | undefined,
 ): SettingsSnapshot => {
@@ -116,5 +152,9 @@ export const readSettingsSnapshot = (
       DEFAULT_SETTINGS.animationGroupOverride,
     ),
     usageWarningPct: numberOrDefault(v(SETTING_KEYS.usageWarningPct), DEFAULT_SETTINGS.usageWarningPct),
+    hostKeystrokeBackend: keystrokeBackendOrDefault(
+      v(SETTING_KEYS.hostKeystrokeBackend),
+      DEFAULT_SETTINGS.hostKeystrokeBackend,
+    ),
   };
 };

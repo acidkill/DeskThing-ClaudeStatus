@@ -21,6 +21,7 @@ describe('shared/messages', () => {
       splashRotateSec: 20,
       animationGroupOverride: 'auto',
       usageWarningPct: 80,
+      hostKeystrokeBackend: 'auto',
     });
   });
 
@@ -32,7 +33,15 @@ describe('shared/messages', () => {
 
   it('setting keys match the snapshot field names', () => {
     expect(Object.keys(SETTING_KEYS).sort()).toEqual(
-      ['animationGroupOverride', 'credentialsPath', 'pollIntervalSec', 'splashEnabled', 'splashRotateSec', 'usageWarningPct'],
+      [
+        'animationGroupOverride',
+        'credentialsPath',
+        'hostKeystrokeBackend',
+        'pollIntervalSec',
+        'splashEnabled',
+        'splashRotateSec',
+        'usageWarningPct',
+      ],
     );
   });
 

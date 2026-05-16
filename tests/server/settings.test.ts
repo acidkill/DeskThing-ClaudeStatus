@@ -49,4 +49,24 @@ describe('readSettingsSnapshot', () => {
     const snap = readSettingsSnapshot({ splashEnabled: { value: false } });
     expect(snap.splashEnabled).toBe(false);
   });
+
+  it('accepts every valid hostKeystrokeBackend value', () => {
+    for (const value of [
+      'auto',
+      'osascript',
+      'xdotool',
+      'wtype',
+      'ydotool',
+      'powershell',
+      'off',
+    ] as const) {
+      const snap = readSettingsSnapshot({ hostKeystrokeBackend: { value } });
+      expect(snap.hostKeystrokeBackend).toBe(value);
+    }
+  });
+
+  it('falls back to default for unknown hostKeystrokeBackend', () => {
+    const snap = readSettingsSnapshot({ hostKeystrokeBackend: { value: 'nope' } });
+    expect(snap.hostKeystrokeBackend).toBe('auto');
+  });
 });

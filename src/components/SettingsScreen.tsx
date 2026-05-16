@@ -39,6 +39,7 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
           <Row label={t('settings.splashRotateSec')} value={`${settings.splashRotateSec}s`} />
           <Row label={t('settings.moodOverride')} value={settings.animationGroupOverride} />
           <Row label={t('settings.warningThreshold')} value={`${settings.usageWarningPct}%`} />
+          <Row label={t('settings.hostKeystrokeBackend')} value={settings.hostKeystrokeBackend} />
         </div>
 
         <div className="flex flex-col gap-1 rounded-lg bg-clawd-panel px-4 py-3">

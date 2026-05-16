@@ -76,6 +76,7 @@ The standard pre-PR loop: `npm run typecheck && npm run lint && npm test && npm 
 | `splashRotateSec`        | number     | `20`                           | `5..300`    | Seconds before flipping Usage ↔ Splash.                                 |
 | `animationGroupOverride` | select     | `auto`                         | see options | `auto` / `idle` / `active` / `busy` / `frantic` — forces a mood tier.   |
 | `usageWarningPct`        | range      | `80`                           | `1..100`    | Bars switch to warning colour at this utilisation.                      |
+| `hostKeystrokeBackend`   | select     | `auto`                         | see options | How `clawd:voice_ptt` / `clawd:mode_toggle` dispatch keys to the host. `auto` probes per-platform; `off` disables. |
 
 Settings live on the DeskThing server and are pushed to the client via a typed `settings` message whenever they change.
 
@@ -87,12 +88,25 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 | ------------------------ | ----------------------------------------------------------------------------------- |
 | `clawd:refresh_now`      | Triggers an immediate Anthropic poll (skipped if a poll is already in flight).      |
 | `clawd:cycle_animation`  | Cycles the client between Usage and Splash views.                                   |
-| `clawd:voice_ptt`        | **Limitation**: intended to send Space to the focused host window. Not dispatched. |
-| `clawd:mode_toggle`      | **Limitation**: intended to send Shift+Tab to the focused host window. Not dispatched. |
+| `clawd:voice_ptt`        | Sends Space to the focused host window via the configured `hostKeystrokeBackend`.   |
+| `clawd:mode_toggle`      | Sends Shift+Tab to the focused host window via the configured `hostKeystrokeBackend`. |
 
-### Host-keystroke limitation
+### Host-keystroke dispatch
 
-`@deskthing/server` 0.11 does not expose a host-keystroke dispatch API. The two keystroke actions register and fire — the app receives an `action:fired` event and logs the call — but the SDK has no way to synthesise Space / Shift+Tab on the host's focused window. Pulling in `nut.js` or `robotjs` would add platform-specific native binaries that don't reliably load inside the DeskThing server runtime. Will revisit once the upstream platform exposes the capability.
+`clawd:voice_ptt` and `clawd:mode_toggle` synthesise host keystrokes by shelling out from the DeskThing server (Node) to a platform-native input tool — the same approach `nut.js` / `robotjs` use internally, minus the native-module load problem inside the DeskThing runtime. The backend is selected per the `hostKeystrokeBackend` setting:
+
+| Platform        | Backend       | Prerequisite                                                                  |
+| --------------- | ------------- | ----------------------------------------------------------------------------- |
+| macOS           | `osascript`   | Built into macOS. May prompt for Accessibility permission on first run.       |
+| Linux X11       | `xdotool`     | `sudo apt install xdotool` (Debian/Ubuntu) / `sudo dnf install xdotool` (Fedora). |
+| Linux Wayland   | `wtype`       | `sudo apt install wtype` / build from source. Recommended for Wayland.        |
+| Linux Wayland   | `ydotool`     | Requires `ydotoold` daemon running; an alternative when `wtype` is unavailable. |
+| Windows         | `powershell`  | Built into Windows (uses `System.Windows.Forms.SendKeys`).                    |
+| any             | `off`         | Disable host keystroke dispatch entirely.                                     |
+
+`auto` probes the appropriate tool for the current platform at startup (Wayland Linux probes `wtype` first; X11 Linux probes `xdotool` first). If no tool is available the backend falls back to `off` and the action becomes a no-op — change the `hostKeystrokeBackend` setting to surface the right prerequisite. Power users can pin a specific backend to override probing, or set `off` to opt out entirely.
+
+The dispatcher does not bundle any native binaries; everything is a short shell-out with a 200 ms timeout, and dispatch failures are logged but never thrown back into the action handler.
 
 ## Troubleshooting
 
@@ -101,7 +115,7 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 - **Settings shows `anthropic:http:429`.** Rate-limited. The server backs off exponentially up to `pollIntervalSec × 8` (and honours `retry-after` if Anthropic sends one). Raise `pollIntervalSec` if this happens often.
 - **Settings shows `anthropic:timeout`.** Default request timeout is 15 s. Network issue between the DeskThing host and the Anthropic API.
 - **`usage.waiting` never goes away.** First poll hasn't completed yet — wait `pollIntervalSec + 5`. If it persists, check the server log for an error.
-- **Mappings don't fire host keys.** Known limitation — see "Host-keystroke limitation" above. The actions themselves do register and dispatch the `action:fired` client event.
+- **Mappings don't fire host keys.** Check the server log for `host keystroke backend resolved` — if `backend=off`, the probe failed. On Linux install `xdotool` (X11) or `wtype` (Wayland). On macOS grant the DeskThing process Accessibility permission. Then pin `hostKeystrokeBackend` to the explicit value or restart the app so `auto` re-probes.
 
 ## Testing
 
@@ -134,6 +148,7 @@ clawdmeter-deskthing/
 │   ├── poller.ts                # orchestrator with backoff + single-flight
 │   ├── settings.ts              # DeskThing.initSettings + snapshot reader
 │   ├── actions.ts               # registers the four Clawdmeter actions
+│   ├── keys.ts                  # host-keystroke dispatch (osascript/xdotool/wtype/ydotool/powershell)
 │   └── log.ts                   # redacting logger
 ├── src/                         # React client (Vite-bundled)
 │   ├── App.tsx                  # Usage / Splash / Settings router
