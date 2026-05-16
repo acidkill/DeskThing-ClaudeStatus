@@ -26,5 +26,21 @@ All notable changes to this project will be documented in this file. Format: Kee
 ### Documented limitation
 - Host-keystroke dispatch is **not implemented** — `@deskthing/server` 0.11 has no `sendKey`-equivalent. `clawd:voice_ptt` and `clawd:mode_toggle` register and fire (visible in the mappings UI), but the Space / Shift+Tab dispatch to the focused host window depends on a DeskThing platform feature that does not yet exist. README troubleshooting section flags this.
 
+### Added (Phase 5)
+- `src/lib/deskthing.ts`: typed `createDeskThing<ServerToClient, ClientToServer>()` wrapper so all client send/receive is type-checked against `shared/messages.ts`.
+- `src/hooks/useDeskThingMessage.ts` + `src/hooks/useUsage.ts`: thin typed subscription helpers; `useUsage` tracks `usage`, `error`, `settings`, and the most recent action — and requests an initial settings snapshot on mount.
+- `src/components/UsageBar.tsx`, `ResetCountdown.tsx`, `StatusPill.tsx`: shared display primitives with tone (`ok` / `warn` / `err`) derived from `usageWarningPct` and `status`.
+- `src/components/MeterMascot.tsx`: original SVG mascot ("Pip") — a cyan/teal capsule character with cheeks, eye-blink, body-breath, and a tiny swinging gauge whose animation speed scales with mood (idle → active → busy → frantic). Hand-authored, not derived from Clawd or any other mascot, no external assets.
+- `src/components/UsageScreen.tsx`: two-column layout for 800×480 — bars + countdowns + status pill on the left, mascot + mood label on the right.
+- `src/components/SplashScreen.tsx`: centered mascot at 320 px with mood label.
+- `src/components/SettingsScreen.tsx`: read-only snapshot of the six settings, last error pane, manual refresh button, mood-preview mascot.
+- `src/App.tsx`: routes between Usage / Splash / Settings. Auto-rotates Usage ↔ Splash every `splashRotateSec` when `splashEnabled`. `clawd:cycle_animation` action advances the rotation. Touchable nav pill toggles into Settings and back.
+- `src/i18n/`: extracted every user-facing string into `en.json` with a `t(key, vars)` helper — no hardcoded UI copy in components.
+- `tailwind.config.js`: mood-driven keyframes and animation utilities (`mood-idle/active/busy/frantic`, `blink-slow/fast`, `gauge-slow/active/busy/frantic`) used by the mascot.
+
+### Verified
+- `npm run typecheck`, `npm run lint`, `npm run build` clean. Bundle still ~157 KB.
+- Built client serves and renders `index.html` (HTTP 200 from a static server). Live rendering of the screens requires the DeskThing server runtime; no DeskThing instance available in this environment to verify the §10.3 / §10.4 / §10.5 DoD items end-to-end yet.
+
 ### Notes
-- Client UI screens (UsageScreen, SplashScreen, SettingsScreen) and the original placeholder mascot land in Phase 5.
+- Web fonts are not yet bundled: components reference `font-sans` / `font-mono` Tailwind tokens that fall back to system UI fonts (Inter / JetBrains Mono families if installed, else system-ui / ui-monospace). Self-hosting OFL Inter + JetBrains Mono is a Phase 7 follow-up.
