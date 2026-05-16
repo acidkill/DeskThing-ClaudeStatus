@@ -2,7 +2,7 @@
 
 Live Claude Code session and weekly usage meters with a mood-driven splash, ported from the [Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) ESP32 dashboard to the [Spotify Car Thing](https://github.com/ItsRiprod/DeskThing) running on the DeskThing platform.
 
-This is the **server core**. Client UI screens (UsageScreen, SplashScreen, SettingsScreen) land in Phase 5. See `CLAUDE.md` (local, gitignored) for the full design brief and `CHANGELOG.md` for what has shipped.
+Server core + client UI are in place. The Car Thing rotates between a usage screen (two bars, two reset countdowns, status pill, mood-driven mascot) and a splash screen on a configurable interval, with a touchable nav into a settings & status pane. See `CLAUDE.md` (local, gitignored) for the full design brief and `CHANGELOG.md` for what has shipped.
 
 ## Purpose
 
