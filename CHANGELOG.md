@@ -77,3 +77,15 @@ All notable changes to this project will be documented in this file. Format: Kee
 ### Notes
 - Web fonts are still not bundled. `font-sans` / `font-mono` Tailwind tokens fall back to system UI fonts. Self-hosting OFL Inter + JetBrains Mono WOFF2 is a documented follow-up.
 - Live DeskThing-runtime verification (DoD §10.2–10.4) needs a real Car Thing or desktop DeskThing instance; install `dist/claude-status-deskthing-v0.3.0.zip` and walk the checklist.
+
+## [0.3.1] — 2026-05-17
+
+### Changed
+- **Clawd mascot everywhere:** replaced placeholder Pip SVG with the Clawd pixel-art sprite renderer on all three screens (Usage, Splash, Settings). `ClawdSprite` is now the sole mascot component; `MeterMascot` (Pip) remains in the codebase for reference but is no longer rendered anywhere.
+- **App icon updated:** `deskthing/icons/claude-status.svg` regenerated from `idle_breathe` frame 0 — Clawd's orange-red body on the dark panel background.
+- **Sprite assets committed:** `assets-proprietary/clawd/*.json` removed from `.gitignore` (private repo); 13 animation groups (idle/expression/work/dance) now tracked in git and bundled by Vite via `import.meta.glob`.
+- **Mood idle threshold tightened:** `IDLE_MAX` lowered from 0.10 to 0.02 pp/min — real Sonnet usage increments the 5h counter by ~0.01–0.05 pp/min; the old threshold was never crossed in practice, causing the app to always show `idle`.
+- **`movementMood()` fixed:** previously compared oldest vs. newest sample in the 5-minute window (missed ticks where usage increased mid-window then held flat); now scans consecutive pairs — any forward movement returns `active`.
+
+### Fixed
+- App always showing `idle` mood even during active Claude Code sessions.

@@ -51,9 +51,6 @@ coverage/
 .eslintcache
 .stylelintcache
 
-# Optional asset workspace — sprites/fonts not safe to redistribute
-assets-proprietary/
-
 # Local Claude Code / agent scratch
 .claude/
 !.claude/settings.json
