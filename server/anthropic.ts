@@ -48,11 +48,19 @@ const parsePct = (raw: string | null): number => {
   return Math.max(0, Math.min(100, Math.round(pct)));
 };
 
+const EPOCH_SECONDS_THRESHOLD = 1_000_000_000;
+
 const parseResetMinutes = (raw: string | null): number => {
   if (!raw) return 0;
   const asNumber = Number(raw);
   if (Number.isFinite(asNumber)) {
-    return Math.max(0, Math.round(asNumber / 60));
+    // Anthropic returns the reset header as an absolute Unix epoch timestamp
+    // in seconds. Numbers >= 1_000_000_000 (post-2001) are treated as epoch
+    // seconds; smaller numbers are treated as relative seconds-until-reset
+    // for backwards compatibility with older proxies or fixtures.
+    const ms =
+      asNumber >= EPOCH_SECONDS_THRESHOLD ? asNumber * 1000 : Date.now() + asNumber * 1000;
+    return Math.max(0, Math.round((ms - Date.now()) / 60_000));
   }
   const asDate = Date.parse(raw);
   if (Number.isFinite(asDate)) {
