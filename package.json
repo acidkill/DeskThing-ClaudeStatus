@@ -1,10 +1,10 @@
 {
-  "name": "clawdmeter-deskthing",
+  "name": "claude-status-deskthing",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "main": "dist/index.js",
-  "description": "Clawdmeter port for the Spotify Car Thing running on the DeskThing platform.",
+  "description": "Claude Code session and weekly usage meters for the Spotify Car Thing running on the DeskThing platform.",
   "license": "Apache-2.0",
   "scripts": {
     "dev:vite": "vite",
