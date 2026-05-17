@@ -25,18 +25,9 @@ export const setupSettings = (): void => {
     [SETTING_KEYS.splashEnabled]: {
       id: SETTING_KEYS.splashEnabled,
       label: 'Show splash screen',
-      description: 'Rotate the splash/mascot screen alongside the usage screen.',
+      description: 'When idle, show the mascot splash screen. When active/busy/frantic, show usage stats.',
       type: SETTING_TYPES.BOOLEAN,
       value: DEFAULT_SETTINGS.splashEnabled,
-    },
-    [SETTING_KEYS.splashRotateSec]: {
-      id: SETTING_KEYS.splashRotateSec,
-      label: 'Splash rotate (seconds)',
-      description: 'Seconds the splash screen stays visible before rotating back to usage.',
-      type: SETTING_TYPES.NUMBER,
-      value: DEFAULT_SETTINGS.splashRotateSec,
-      min: 5,
-      max: 300,
     },
     [SETTING_KEYS.animationGroupOverride]: {
       id: SETTING_KEYS.animationGroupOverride,
