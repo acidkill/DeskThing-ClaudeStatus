@@ -1,7 +1,7 @@
 {
   "name": "clawdmeter-deskthing",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "dist/index.js",
   "description": "Clawdmeter port for the Spotify Car Thing running on the DeskThing platform.",
