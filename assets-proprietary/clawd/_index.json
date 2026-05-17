@@ -35,6 +35,20 @@
     "palette_size": 6
   },
   {
+    "filename": "idle_reading.html",
+    "name": "idle reading",
+    "category": "Idle",
+    "frame_count": 7,
+    "palette_size": 6
+  },
+  {
+    "filename": "work_blackboard.html",
+    "name": "work blackboard",
+    "category": "Work",
+    "frame_count": 8,
+    "palette_size": 7
+  },
+  {
     "filename": "expression_wink.html",
     "name": "expression wink",
     "category": "Expressions",
@@ -79,7 +93,7 @@
   {
     "filename": "work_think.html",
     "name": "work think",
-    "category": "Work",
+    "category": "Archive",
     "frame_count": 24,
     "palette_size": 3
   },
