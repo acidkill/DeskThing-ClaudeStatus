@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, type FC } from 'react';
 
-import { ACTION_IDS } from '../shared/messages';
 import { SettingsScreen } from './components/SettingsScreen';
 import { SplashScreen } from './components/SplashScreen';
 import { UsageScreen } from './components/UsageScreen';
@@ -9,41 +8,28 @@ import { useUsage } from './hooks/useUsage';
 
 type Screen = 'usage' | 'splash' | 'settings';
 
-const ROTATION: ReadonlyArray<Screen> = ['usage', 'splash'];
-
-const nextScreen = (current: Screen): Screen => {
-  const idx = ROTATION.indexOf(current);
-  if (idx === -1) return 'usage';
-  return ROTATION[(idx + 1) % ROTATION.length] ?? 'usage';
-};
-
 const App: FC = () => {
-  const { usage, error, settings, lastActionId, lastActionAt, requestRefresh } = useUsage();
-  const [screen, setScreen] = useState<Screen>('usage');
-
-  useEffect(() => {
-    if (!settings.splashEnabled) {
-      setScreen('usage');
-      return;
-    }
-    const intervalMs = Math.max(5, settings.splashRotateSec) * 1000;
-    const id = window.setInterval(() => {
-      setScreen((current) => (current === 'settings' ? current : nextScreen(current)));
-    }, intervalMs);
-    return () => window.clearInterval(id);
-  }, [settings.splashEnabled, settings.splashRotateSec]);
-
-  useEffect(() => {
-    if (!lastActionId || !lastActionAt) return;
-    if (lastActionId === ACTION_IDS.cycleAnimation) {
-      setScreen((current) => (current === 'settings' ? current : nextScreen(current)));
-    }
-  }, [lastActionId, lastActionAt]);
-
-  const goSettings = useCallback(() => setScreen('settings'), []);
-  const goUsage = useCallback(() => setScreen('usage'), []);
+  const { usage, error, settings, requestRefresh } = useUsage();
+  const [screen, setScreen] = useState<Screen>('splash');
 
   const mood = usage?.mood ?? (settings.animationGroupOverride === 'auto' ? 'idle' : settings.animationGroupOverride);
+
+  // Mood drives the screen: idle → splash, anything active → usage.
+  // Switching to settings is manual and persists until the user navigates away.
+  useEffect(() => {
+    if (!settings.splashEnabled) {
+      setScreen((s) => (s === 'settings' ? s : 'usage'));
+      return;
+    }
+    const target: Screen = mood === 'idle' ? 'splash' : 'usage';
+    setScreen((s) => (s === 'settings' ? s : target));
+  }, [mood, settings.splashEnabled]);
+
+  const goSettings = useCallback(() => setScreen('settings'), []);
+  const goBack = useCallback(() => {
+    const target: Screen = mood === 'idle' ? 'splash' : 'usage';
+    setScreen(settings.splashEnabled ? target : 'usage');
+  }, [mood, settings.splashEnabled]);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-clawd-bg text-clawd-fg font-sans">
@@ -59,10 +45,10 @@ const App: FC = () => {
         ) : (
           <button
             type="button"
-            onClick={goUsage}
+            onClick={goBack}
             className="rounded-full border border-clawd-muted/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-clawd-muted hover:text-clawd-fg hover:border-clawd-fg/50"
           >
-            {t('screen.usage')}
+            {t('screen.back')}
           </button>
         )}
       </nav>

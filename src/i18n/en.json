@@ -17,6 +17,7 @@
   "screen.usage": "Usage",
   "screen.splash": "Splash",
   "screen.settings": "Settings",
+  "screen.back": "Back",
   "settings.title": "Settings & status",
   "settings.pollInterval": "Poll interval",
   "settings.credentialsPath": "Credentials path",
