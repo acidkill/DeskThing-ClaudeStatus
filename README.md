@@ -60,15 +60,15 @@ npm install
 
 The standard pre-PR loop: `npm run typecheck && npm run lint && npm test && npm run build`.
 
-### Regenerating idle sprites
+### Regenerating custom sprites
 
-`scripts/generate-idle-sprites.mjs` builds the bespoke `idle_strawberry` and `idle_bubbles` sprites from a shared Clawd base pose + overlay primitives. Re-run after editing the shape definitions:
+`scripts/generate-sprites.mjs` builds the bespoke Clawd animations from a shared base pose + overlay primitives. Re-run after editing the shape definitions:
 
 ```bash
-node scripts/generate-idle-sprites.mjs
+node scripts/generate-sprites.mjs
 ```
 
-Output overwrites `assets-proprietary/clawd/idle_{strawberry,bubbles}.json`. Vite's `import.meta.glob` picks them up on the next build.
+Output overwrites `assets-proprietary/clawd/{idle_strawberry,idle_bubbles,idle_reading,work_blackboard}.json`. Vite's `import.meta.glob` picks them up on the next build.
 
 ## Install on a DeskThing server
 
@@ -112,12 +112,14 @@ Once a mood is derived, the client picks animations from a category pool and cyc
 
 | Mood     | Pool         | Sprites                                                                 |
 | -------- | ------------ | ----------------------------------------------------------------------- |
-| idle     | `Idle`       | breathe, blink, look around, **strawberry**, **bubbles**                |
+| idle     | `Idle`       | breathe, blink, look around, **strawberry**, **bubbles**, **reading**   |
 | active   | `Expressions`+`Idle` | wink, surprise, sleep, + idle pool                              |
-| busy     | `Work`       | coding, think                                                           |
+| busy     | `Work`       | coding (laptop), **blackboard** (physics formulas)                      |
 | frantic  | `Dance`      | bounce, sway, djmix, bounce_dj, sway_dj                                 |
 
-`strawberry` and `bubbles` are bespoke animations added in v0.3.3 (Clawd nibbles a strawberry / blows soap bubbles). All sprite data lives under `assets-proprietary/clawd/*.json` and is bundled into the client JS at build time via `import.meta.glob`.
+Bespoke animations added in this fork: `strawberry` + `bubbles` (v0.3.3), `reading` + `blackboard` (v0.3.5). `work_think` was demoted to category `Archive` in v0.3.5 — the file is still in the repo for reference but no longer rotates. All sprite data lives under `assets-proprietary/clawd/*.json` and is bundled into the client JS at build time via `import.meta.glob`.
+
+The mood thresholds in `MoodTracker` are calibrated for Sonnet 4.6 normal-use granularity. Opus 4.7 burns budget ~5× faster per token, so the same user behaviour escalates mood more aggressively on Opus — this is intentional and reflects the actual rate of budget consumption.
 
 ## Actions reference
 
