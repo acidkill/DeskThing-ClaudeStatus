@@ -32,6 +32,16 @@ const BUSY_MAX = 0.33;
 const ACTIVE_PCT_FLOOR = 50;
 const BUSY_PCT_FLOOR = 75;
 const FRANTIC_PCT_FLOOR = 90;
+/**
+ * How long after the last observed forward movement (on EITHER the session or
+ * weekly counter) the tracker stays at least `active`. Outlives the 5-minute
+ * sample window so granular plateaus — typical for the unified-5h counter,
+ * which only ticks every 1–3 polls during normal Sonnet usage — don't drop
+ * the mascot back to idle while Claude is still humming. Tuning rationale:
+ * shorter than this and brief pauses between turns look idle; longer and a
+ * truly idle user keeps seeing "active" long after they stopped.
+ */
+const ACTIVE_MEMORY_MS = 10 * 60 * 1000;
 
 type Sample = { ts: number; sessionPct: number };
 
@@ -40,11 +50,17 @@ const maxMood = (a: Mood, b: Mood): Mood => (ORDER.indexOf(b) > ORDER.indexOf(a)
 
 export class MoodTracker {
   private samples: Sample[] = [];
+  private prevSessionPct: number | null = null;
+  private prevWeeklyPct: number | null = null;
+  private lastForwardAt: number | null = null;
 
-  record(sessionPct: number, now: number = Date.now()): void {
+  record(sessionPct: number, weeklyPct: number = 0, now: number = Date.now()): void {
     const last = this.samples[this.samples.length - 1];
     if (last && sessionPct + RESET_DROP_PCT < last.sessionPct) {
+      // 5h window reset on the upstream counter — drop the sample buffer but
+      // keep `lastForwardAt` so we don't pretend the user just went idle.
       this.samples = [];
+      this.prevSessionPct = null;
     }
     this.samples.push({ ts: now, sessionPct });
     const cutoff = now - WINDOW_MS;
@@ -56,6 +72,19 @@ export class MoodTracker {
       }
       break;
     }
+
+    // Track forward movement on EITHER counter, independently of the sample
+    // window. The session 5h counter has coarse granularity (~0.01–0.05
+    // pp/min) so we also watch the weekly counter; either ticking up means
+    // the user is actively burning tokens.
+    if (this.prevSessionPct !== null && sessionPct > this.prevSessionPct) {
+      this.lastForwardAt = now;
+    }
+    if (this.prevWeeklyPct !== null && weeklyPct > this.prevWeeklyPct) {
+      this.lastForwardAt = now;
+    }
+    this.prevSessionPct = sessionPct;
+    this.prevWeeklyPct = weeklyPct;
   }
 
   /** Percentage points per minute over the captured window, rounded to 2 dp. */
@@ -99,20 +128,41 @@ export class MoodTracker {
   }
 
   /**
-   * Combine rate-based, absolute-pct, and any-forward-movement signals and
-   * return the loudest mood any of them implies. The override short-circuits
-   * everything for instant manual control.
+   * Cross-window memory of recent forward movement. Survives sample pruning,
+   * so granular plateaus on the unified-5h counter (1–3 polls without a
+   * visible tick) don't snap us back to idle while Claude is still working.
+   */
+  private recentMovementMood(now: number): Mood {
+    if (this.lastForwardAt === null) return 'idle';
+    if (now - this.lastForwardAt <= ACTIVE_MEMORY_MS) return 'active';
+    return 'idle';
+  }
+
+  /**
+   * Combine rate-based, absolute-pct, in-window movement, and cross-window
+   * recent-movement signals; return the loudest mood any of them implies.
+   * The override short-circuits everything for instant manual control.
    */
   derive(override: SettingsSnapshot['animationGroupOverride'], now: number = Date.now()): Mood {
     if (override !== 'auto') return override;
-    return maxMood(maxMood(this.rateMood(now), this.absoluteMood()), this.movementMood());
+    return maxMood(
+      maxMood(this.rateMood(now), this.absoluteMood()),
+      maxMood(this.movementMood(), this.recentMovementMood(now)),
+    );
   }
 
   size(): number {
     return this.samples.length;
   }
 
+  lastForwardTimestamp(): number | null {
+    return this.lastForwardAt;
+  }
+
   reset(): void {
     this.samples = [];
+    this.prevSessionPct = null;
+    this.prevWeeklyPct = null;
+    this.lastForwardAt = null;
   }
 }
