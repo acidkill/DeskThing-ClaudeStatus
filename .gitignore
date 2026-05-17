@@ -45,6 +45,7 @@ desktop.ini
 # Logs & test/coverage artifacts
 logs/
 *.log
+tool_events.jsonl
 coverage/
 .nyc_output/
 .eslintcache
