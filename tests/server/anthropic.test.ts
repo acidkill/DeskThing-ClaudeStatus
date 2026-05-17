@@ -74,6 +74,27 @@ describe('pingAnthropic', () => {
     expect(snapshot.weeklyResetMin).toBe(120);
   });
 
+  it('treats large numeric reset values as Unix epoch seconds, not seconds-until', async () => {
+    const sessionEpochSec = Math.floor(new Date('2026-05-16T12:45:00Z').getTime() / 1000);
+    const weeklyEpochSec = Math.floor(new Date('2026-05-16T15:00:00Z').getTime() / 1000);
+    installFetchMock(async () => okResponse({
+      'anthropic-ratelimit-unified-5h-reset': String(sessionEpochSec),
+      'anthropic-ratelimit-unified-7d-reset': String(weeklyEpochSec),
+    }));
+    const snapshot = await pingAnthropic('tok');
+    expect(snapshot.sessionResetMin).toBe(45);
+    expect(snapshot.weeklyResetMin).toBe(180);
+  });
+
+  it('clamps past epoch resets to zero', async () => {
+    const pastEpochSec = Math.floor(new Date('2026-05-16T11:00:00Z').getTime() / 1000);
+    installFetchMock(async () => okResponse({
+      'anthropic-ratelimit-unified-5h-reset': String(pastEpochSec),
+    }));
+    const snapshot = await pingAnthropic('tok');
+    expect(snapshot.sessionResetMin).toBe(0);
+  });
+
   it('clamps percentages and defaults missing headers safely', async () => {
     installFetchMock(async () => okResponse({}));
     const snapshot = await pingAnthropic('tok');

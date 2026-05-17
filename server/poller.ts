@@ -61,11 +61,22 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
         const creds = await readCredentials(settings.credentialsPath);
         const snapshot = await pingAnthropic(creds.accessToken);
         mood.record(snapshot.sessionPct);
+        const ratePpm = mood.ratePctPerMin();
         const payload = buildUsagePayload(snapshot, mood.derive(settings.animationGroupOverride));
         deps.send({ type: 'usage', payload });
         consecutive429 = 0;
         backoffUntil = 0;
-        log.info('poll ok', { s: payload.s, w: payload.w, st: payload.st, mood: payload.mood, reason });
+        log.info('poll ok', {
+          s: payload.s,
+          w: payload.w,
+          sr: payload.sr,
+          wr: payload.wr,
+          st: payload.st,
+          mood: payload.mood,
+          ratePpm,
+          samples: mood.size(),
+          reason,
+        });
       } catch (err) {
         if (err instanceof CredentialsError) {
           deps.send({ type: 'error', payload: credentialErrorPayload(err) });
