@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 
 import type { SettingsSnapshot, UsagePayload } from '../../shared/messages';
+import { ClawdSprite } from '../clawd/ClawdSprite';
+import { hasClawdSprites } from '../clawd/sprites';
 import { t } from '../i18n';
 import { ResetCountdown } from './ResetCountdown';
 import { StatusPill } from './StatusPill';
@@ -11,6 +13,8 @@ type Props = {
   usage: UsagePayload | null;
   settings: SettingsSnapshot;
 };
+
+const useClawd = hasClawdSprites();
 
 export const UsageScreen: FC<Props> = ({ usage, settings }) => {
   if (!usage) {
@@ -54,7 +58,11 @@ export const UsageScreen: FC<Props> = ({ usage, settings }) => {
       </div>
 
       <aside className="flex flex-col items-center justify-center gap-2">
-        <MeterMascot mood={usage.mood} size={220} />
+        {useClawd ? (
+          <ClawdSprite mood={usage.mood} size={220} />
+        ) : (
+          <MeterMascot mood={usage.mood} size={220} />
+        )}
         <span className="text-xs uppercase tracking-widest text-clawd-muted">
           {t(`usage.mood.${usage.mood}` as const)}
         </span>

@@ -37,4 +37,21 @@ None of these are bundled into the source tree; they are resolved into `node_mod
 
 ## If you want to use the upstream Clawd mascot
 
-`assets-proprietary/` is gitignored. Drop user-supplied sprites there and load them at runtime via a future BYO-sprites setting. That keeps any redistribution-restricted asset out of the public commit history and the built bundle.
+`assets-proprietary/` is gitignored. Drop user-supplied sprites there and the client picks them up automatically. That keeps any redistribution-restricted asset out of the public commit history.
+
+### Opt-in Clawd sprite bundle (personal use only)
+
+For local forks where the owner accepts the licensing risk, this repo can optionally bundle the original Clawd pixel-art sprites under `assets-proprietary/clawd/`. When present, `src/clawd/sprites.ts` picks them up via a Vite glob and `src/clawd/ClawdSprite.tsx` renders them on a `<canvas>` instead of the Pip SVG fallback.
+
+| Path                                | Licence                              | Origin                                                                                       |
+| ----------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `assets-proprietary/NOTICE.md`      | Apache-2.0 (prose)                   | Original notice authored for this repo describing the proprietary directory.                 |
+| `assets-proprietary/clawd/*.json`   | **Third-party, no licence granted**  | Clawd pixel-art sprite data scraped from https://claudepix.vercel.app via the upstream Clawdmeter project's `tools/scrape_claudepix.js`. Copyright Anthropic, PBC and `@amaanbuilds`. |
+
+**Constraints for opt-in users:**
+
+- These files **must not** be committed to a public Git remote. The repo's `.gitignore` already blocks `assets-proprietary/` to enforce this.
+- Distributed `.zip` bundles built with these sprites bundled are for **personal use** only. Do not redistribute the bundle to third parties.
+- If a rights holder requests removal, delete `assets-proprietary/clawd/` from your working copy. The build continues to work — `hasClawdSprites()` returns `false` and the UI falls back to the original Pip mascot.
+
+See `assets-proprietary/NOTICE.md` for the full notice. If the directory is empty (default state after a fresh clone), nothing changes — the app ships with Pip.
