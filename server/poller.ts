@@ -9,6 +9,7 @@ type GetSettings = () => SettingsSnapshot;
 
 export type Poller = {
   poll: (reason: 'tick' | 'manual' | 'settings-change') => Promise<void>;
+  broadcastMood: () => void;
   dispose: () => void;
 };
 
@@ -42,6 +43,7 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
   let consecutive429 = 0;
   let backoffUntil = 0;
   let disposed = false;
+  let lastSnapshot: RateLimitSnapshot | null = null;
 
   const poll = async (reason: 'tick' | 'manual' | 'settings-change'): Promise<void> => {
     if (disposed) return;
@@ -60,6 +62,7 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
       try {
         const creds = await readCredentials(settings.credentialsPath);
         const snapshot = await pingAnthropic(creds.accessToken);
+        lastSnapshot = snapshot;
         mood.record(snapshot.sessionPct);
         const ratePpm = mood.ratePctPerMin();
         const payload = buildUsagePayload(snapshot, mood.derive(settings.animationGroupOverride));
@@ -107,10 +110,18 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
     await inflight;
   };
 
+  const broadcastMood = (): void => {
+    if (disposed || !lastSnapshot) return;
+    const settings = deps.getSettings();
+    const payload = buildUsagePayload(lastSnapshot, mood.derive(settings.animationGroupOverride));
+    deps.send({ type: 'usage', payload });
+    log.info('mood rebroadcast', { mood: payload.mood, override: settings.animationGroupOverride });
+  };
+
   const dispose = (): void => {
     disposed = true;
     mood.reset();
   };
 
-  return { poll, dispose };
+  return { poll, broadcastMood, dispose };
 };
