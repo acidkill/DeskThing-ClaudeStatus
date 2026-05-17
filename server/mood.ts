@@ -33,15 +33,28 @@ const ACTIVE_PCT_FLOOR = 50;
 const BUSY_PCT_FLOOR = 75;
 const FRANTIC_PCT_FLOOR = 90;
 /**
- * How long after the last observed forward movement (on EITHER the session or
- * weekly counter) the tracker stays at least `active`. Outlives the 5-minute
- * sample window so granular plateaus — typical for the unified-5h counter,
- * which only ticks every 1–3 polls during normal Sonnet usage — don't drop
- * the mascot back to idle while Claude is still humming. Tuning rationale:
- * shorter than this and brief pauses between turns look idle; longer and a
- * truly idle user keeps seeing "active" long after they stopped.
+ * How far back we look at forward-movement ticks (on EITHER counter) when
+ * deriving "the user is actively working". 20 minutes outlives the 5-minute
+ * sample window AND the typical granularity gap on the unified-5h counter
+ * (~1 visible tick every 5–15 min during normal Sonnet usage). Shorter and
+ * brief pauses between turns look idle; longer and a truly idle user keeps
+ * seeing "active" long after they stopped. Memory is pruned aggressively to
+ * stay bounded.
  */
-const ACTIVE_MEMORY_MS = 10 * 60 * 1000;
+const ACTIVE_MEMORY_MS = 20 * 60 * 1000;
+/**
+ * Tick-count thresholds for the memory signal. The previous design only
+ * returned `active` from memory — so a user generating 5k tokens with
+ * multiple visible counter ticks within 20 minutes still saw `active`, never
+ * `busy` or `frantic`. With these counts, *sustained* activity escalates:
+ *   • 1 tick in window  → active
+ *   • 2–3 ticks         → busy
+ *   • ≥4 ticks          → frantic
+ * Tuned for Sonnet 4.6 normal-use granularity. Coarser counters (or single
+ * heavy bursts) still rely on the rate and absolute-pct signals.
+ */
+const MEMORY_BUSY_TICKS = 2;
+const MEMORY_FRANTIC_TICKS = 4;
 
 type Sample = { ts: number; sessionPct: number };
 
@@ -52,13 +65,16 @@ export class MoodTracker {
   private samples: Sample[] = [];
   private prevSessionPct: number | null = null;
   private prevWeeklyPct: number | null = null;
-  private lastForwardAt: number | null = null;
+  /** Timestamps of every observed forward tick (session OR weekly counter),
+   *  pruned to the last ACTIVE_MEMORY_MS. Drives the count-based escalation
+   *  in `recentMovementMood`. */
+  private forwardTicks: number[] = [];
 
   record(sessionPct: number, weeklyPct: number = 0, now: number = Date.now()): void {
     const last = this.samples[this.samples.length - 1];
     if (last && sessionPct + RESET_DROP_PCT < last.sessionPct) {
       // 5h window reset on the upstream counter — drop the sample buffer but
-      // keep `lastForwardAt` so we don't pretend the user just went idle.
+      // keep `forwardTicks` so we don't pretend the user just went idle.
       this.samples = [];
       this.prevSessionPct = null;
     }
@@ -73,16 +89,27 @@ export class MoodTracker {
       break;
     }
 
-    // Track forward movement on EITHER counter, independently of the sample
-    // window. The session 5h counter has coarse granularity (~0.01–0.05
-    // pp/min) so we also watch the weekly counter; either ticking up means
-    // the user is actively burning tokens.
-    if (this.prevSessionPct !== null && sessionPct > this.prevSessionPct) {
-      this.lastForwardAt = now;
+    // Track forward movement on EITHER counter. The session 5h counter has
+    // coarse granularity (~0.01–0.05 pp/min) so we also watch the weekly
+    // counter; either ticking up means the user is actively burning tokens.
+    // We count ticks (not just remember the last one) so sustained activity
+    // can escalate the memory signal to busy / frantic.
+    const sessionTicked = this.prevSessionPct !== null && sessionPct > this.prevSessionPct;
+    const weeklyTicked = this.prevWeeklyPct !== null && weeklyPct > this.prevWeeklyPct;
+    if (sessionTicked || weeklyTicked) {
+      this.forwardTicks.push(now);
     }
-    if (this.prevWeeklyPct !== null && weeklyPct > this.prevWeeklyPct) {
-      this.lastForwardAt = now;
+    // Prune ticks older than the memory window so the array stays bounded.
+    const memoryCutoff = now - ACTIVE_MEMORY_MS;
+    while (this.forwardTicks.length > 0) {
+      const head = this.forwardTicks[0];
+      if (head !== undefined && head < memoryCutoff) {
+        this.forwardTicks.shift();
+        continue;
+      }
+      break;
     }
+
     this.prevSessionPct = sessionPct;
     this.prevWeeklyPct = weeklyPct;
   }
@@ -130,12 +157,25 @@ export class MoodTracker {
   /**
    * Cross-window memory of recent forward movement. Survives sample pruning,
    * so granular plateaus on the unified-5h counter (1–3 polls without a
-   * visible tick) don't snap us back to idle while Claude is still working.
+   * visible tick) don't snap us back to idle. Counts ticks in the window so
+   * sustained activity escalates to busy / frantic.
    */
   private recentMovementMood(now: number): Mood {
-    if (this.lastForwardAt === null) return 'idle';
-    if (now - this.lastForwardAt <= ACTIVE_MEMORY_MS) return 'active';
-    return 'idle';
+    const count = this.recentForwardTicks(now);
+    if (count === 0) return 'idle';
+    if (count >= MEMORY_FRANTIC_TICKS) return 'frantic';
+    if (count >= MEMORY_BUSY_TICKS) return 'busy';
+    return 'active';
+  }
+
+  /** Forward ticks observed in the last ACTIVE_MEMORY_MS. */
+  private recentForwardTicks(now: number): number {
+    const cutoff = now - ACTIVE_MEMORY_MS;
+    let count = 0;
+    for (const t of this.forwardTicks) {
+      if (t >= cutoff) count += 1;
+    }
+    return count;
   }
 
   /**
@@ -155,14 +195,21 @@ export class MoodTracker {
     return this.samples.length;
   }
 
+  /** Timestamp of the most recent forward tick in any counter, or null. */
   lastForwardTimestamp(): number | null {
-    return this.lastForwardAt;
+    const last = this.forwardTicks[this.forwardTicks.length - 1];
+    return last ?? null;
+  }
+
+  /** Count of forward ticks within ACTIVE_MEMORY_MS for diagnostics. */
+  recentTickCount(now: number = Date.now()): number {
+    return this.recentForwardTicks(now);
   }
 
   reset(): void {
     this.samples = [];
     this.prevSessionPct = null;
     this.prevWeeklyPct = null;
-    this.lastForwardAt = null;
+    this.forwardTicks = [];
   }
 }
