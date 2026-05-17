@@ -1,8 +1,12 @@
 import type { FC } from 'react';
 
+import { hasClawdSprites } from '../clawd/sprites';
+import { ClawdSprite } from '../clawd/ClawdSprite';
+import { MeterMascot } from './MeterMascot';
 import type { ErrorPayload, SettingsSnapshot } from '../../shared/messages';
 import { t } from '../i18n';
-import { MeterMascot } from './MeterMascot';
+
+const useClawd = hasClawdSprites();
 
 type Props = {
   settings: SettingsSnapshot;
@@ -18,6 +22,8 @@ const Row: FC<{ label: string; value: string }> = ({ label, value }) => (
 );
 
 export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
+  const mood = settings.animationGroupOverride === 'auto' ? 'idle' : settings.animationGroupOverride;
+
   return (
     <section className="grid h-full w-full grid-cols-[1fr_220px] gap-6 px-10 py-6">
       <div className="flex flex-col gap-3 overflow-hidden">
@@ -36,7 +42,6 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
           <Row label={t('settings.pollInterval')} value={`${settings.pollIntervalSec}s`} />
           <Row label={t('settings.credentialsPath')} value={settings.credentialsPath} />
           <Row label={t('settings.splashEnabled')} value={settings.splashEnabled ? '✓' : '✗'} />
-          <Row label={t('settings.splashRotateSec')} value={`${settings.splashRotateSec}s`} />
           <Row label={t('settings.moodOverride')} value={settings.animationGroupOverride} />
           <Row label={t('settings.warningThreshold')} value={`${settings.usageWarningPct}%`} />
         </div>
@@ -55,7 +60,11 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
       </div>
 
       <aside className="flex flex-col items-center justify-center">
-        <MeterMascot mood={settings.animationGroupOverride === 'auto' ? 'idle' : settings.animationGroupOverride} size={180} />
+        {useClawd ? (
+          <ClawdSprite mood={mood} size={180} />
+        ) : (
+          <MeterMascot mood={mood} size={180} />
+        )}
         <span className="text-xs uppercase tracking-widest text-clawd-muted">
           {settings.animationGroupOverride}
         </span>
