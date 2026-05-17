@@ -79,6 +79,7 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
           mood: payload.mood,
           ratePpm,
           samples: mood.size(),
+          fwdTicks20m: mood.recentTickCount(),
           lastForwardAgoSec: lastFwd === null ? null : Math.round((Date.now() - lastFwd) / 1000),
           reason,
         });

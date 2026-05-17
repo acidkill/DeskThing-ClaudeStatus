@@ -100,9 +100,9 @@ The server's `MoodTracker` (`server/mood.ts`) combines four signals and returns 
 | **rate**            | session-pct delta over the 5-min sample window                  | `idle <0.02` / `active 0.02–0.2` / `busy 0.2–0.33` / `frantic ≥0.33` pp/min |
 | **absolute**        | most recent `sessionPct` value                                  | `active ≥50%` / `busy ≥75%` / `frantic ≥90%`                    |
 | **in-window movement** | any forward delta between consecutive samples in the window  | `active`                                                        |
-| **recent movement (memory)** | timestamp of last forward tick on session OR weekly counter | `active` while `now - lastForwardAt ≤ 10 min`                  |
+| **recent movement (memory)** | ring buffer of forward ticks on session OR weekly counter in the last 20 min | 1 tick → `active` / 2–3 ticks → `busy` / ≥4 ticks → `frantic` |
 
-The cross-window memory was added in v0.3.2 to fix mood flicker on granular counters: the unified-5h counter often plateaus 1–3 polls between visible ticks during normal Sonnet usage, which used to drop mood back to idle while Claude was still humming. Diagnostics: every `poll ok` log line includes `ratePpm`, `samples`, and `lastForwardAgoSec`.
+The memory signal (introduced in v0.3.2, count-based escalation added in v0.3.4) was designed for Sonnet 4.6's granular unified-5h counter, which often plateaus 5–15 minutes between visible ticks during normal conversation. A single tick keeps the mascot at active for 20 minutes; sustained ticking pushes it through busy to frantic without needing the rate or absolute signals to fire. Diagnostics: every `poll ok` log line includes `ratePpm`, `samples`, `fwdTicks20m`, and `lastForwardAgoSec`.
 
 `animationGroupOverride` short-circuits all four signals when set to anything other than `auto`.
 
@@ -137,8 +137,9 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 ## Troubleshooting
 
 - **No usage updates after install.** Open Settings on the Car Thing and check `credentialsPath`. Server logs are prefixed `[claude-status]`; look for `credentials:not_found` or `credentials:expired`. Fix: log in with Claude Code again (`claude login`).
-- **Mood stuck at idle while clearly working.** Check the latest `poll ok` log line: `lastForwardAgoSec` should be a small number (< 600 s) when the counter is actively ticking. If it's `null`, the unified-5h counter hasn't moved since the app started — try forcing a refresh via the `clawd:refresh_now` action or wait for the next poll. If it stays `null` for many polls during real usage, the credentials file may be stale.
-- **Mood flickers between busy and idle.** Should not happen since v0.3.2 — the 10-min cross-window memory bridges plateaus. If you see it, raise an issue with the poll-log diagnostics (`ratePpm`, `samples`, `lastForwardAgoSec`) from a few consecutive polls.
+- **Mood stuck at idle while clearly working.** Check the latest `poll ok` log line: `fwdTicks20m` should be ≥ 1 when the unified-5h counter has ticked recently. If `fwdTicks20m=0` and `lastForwardAgoSec=null`, the counter hasn't moved since the app started — try forcing a refresh via the `clawd:refresh_now` action or wait for the next poll. If it stays at zero for many polls during real usage, the credentials file may be stale.
+- **Mood stuck at active, never escalating to busy or frantic.** Memory escalation needs ≥ 2 forward ticks within 20 minutes. If `fwdTicks20m=1` in the log line, the counter has only moved once in that window — typical for very light usage or a coarse-tick day. Sustained activity should push it to 2+ ticks → busy / 4+ → frantic.
+- **Mood flickers between busy and idle.** Should not happen since v0.3.2 / v0.3.4 — the 20-min memory bridges plateaus. If you see it, share the poll-log diagnostics (`ratePpm`, `samples`, `fwdTicks20m`, `lastForwardAgoSec`) from a few consecutive polls.
 - **Settings shows `anthropic:http:401`.** Your OAuth token is rejected. Refresh with `claude login`.
 - **Settings shows `anthropic:http:429`.** Rate-limited. The server backs off exponentially up to `pollIntervalSec × 8` (and honours `retry-after` if Anthropic sends one). Raise `pollIntervalSec` if this happens often.
 - **Settings shows `anthropic:timeout`.** Default request timeout is 15 s. Network issue between the DeskThing host and the Anthropic API.
@@ -147,7 +148,7 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 
 ## Testing
 
-Run with `npm test`. Watch mode: `npm run test:watch`. Coverage: `npm run test:coverage`. Current suite: **67 tests** across 7 files exercising message contracts, credentials, Anthropic header parsing, mood signals (incl. plateau bridging), settings coercion, poller orchestration, and client format helpers.
+Run with `npm test`. Watch mode: `npm run test:watch`. Coverage: `npm run test:coverage`. Current suite: **69 tests** across 7 files exercising message contracts, credentials, Anthropic header parsing, mood signals (incl. plateau bridging + tick-count escalation), settings coercion, poller orchestration, and client format helpers.
 
 ## Licensing
 
