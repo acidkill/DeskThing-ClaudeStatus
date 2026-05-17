@@ -1,12 +1,8 @@
 import type { FC } from 'react';
 
-import { hasClawdSprites } from '../clawd/sprites';
 import { ClawdSprite } from '../clawd/ClawdSprite';
-import { MeterMascot } from './MeterMascot';
 import type { ErrorPayload, SettingsSnapshot } from '../../shared/messages';
 import { t } from '../i18n';
-
-const useClawd = hasClawdSprites();
 
 type Props = {
   settings: SettingsSnapshot;
@@ -60,11 +56,7 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
       </div>
 
       <aside className="flex flex-col items-center justify-center">
-        {useClawd ? (
-          <ClawdSprite mood={mood} size={180} />
-        ) : (
-          <MeterMascot mood={mood} size={180} />
-        )}
+        <ClawdSprite mood={mood} size={180} />
         <span className="text-xs uppercase tracking-widest text-clawd-muted">
           {settings.animationGroupOverride}
         </span>
