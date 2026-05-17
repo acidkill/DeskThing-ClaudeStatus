@@ -21,6 +21,20 @@
     "palette_size": 3
   },
   {
+    "filename": "idle_strawberry.html",
+    "name": "idle strawberry",
+    "category": "Idle",
+    "frame_count": 8,
+    "palette_size": 6
+  },
+  {
+    "filename": "idle_bubbles.html",
+    "name": "idle bubbles",
+    "category": "Idle",
+    "frame_count": 8,
+    "palette_size": 6
+  },
+  {
     "filename": "expression_wink.html",
     "name": "expression wink",
     "category": "Expressions",
