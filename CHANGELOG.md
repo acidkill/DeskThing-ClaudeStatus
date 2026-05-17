@@ -121,3 +121,18 @@ All notable changes to this project will be documented in this file. Format: Kee
 - 5 new Vitest cases covering: long-tail plateau bridging, 10-minute fall-off,
   weekly-counter movement triggering memory, diagnostics exposure, and
   preservation across 5h-counter resets. Total: 67 tests, all passing.
+
+## [0.3.3] — 2026-05-17
+
+### Added
+- **Two new idle animations** (by daughter's request):
+  - `idle_strawberry` — Clawd holds a strawberry, takes bites, finishes with a
+    happy smile. 8 frames, 6-colour palette (adds red, leaf green, seed white).
+  - `idle_bubbles` — Clawd holds a wand and blows soap bubbles that drift up
+    and pop. 8 frames, 6-colour palette (adds bubble blue, shine white, wand
+    brown).
+- `scripts/generate-idle-sprites.mjs` — re-runnable generator with a shared
+  Clawd base pose and overlay primitives, so future tweaks don't require
+  hand-editing 20×20 grids. Run with `node scripts/generate-idle-sprites.mjs`.
+- Both new sprites are in the `Idle` category, so they enter the rotation
+  whenever mood resolves to `idle` (cycled every `splashRotateSec`).

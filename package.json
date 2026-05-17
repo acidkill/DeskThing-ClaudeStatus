@@ -1,7 +1,7 @@
 {
   "name": "claude-status-deskthing",
   "private": true,
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "main": "dist/index.js",
   "description": "Claude Code session and weekly usage meters for the Spotify Car Thing running on the DeskThing platform.",
