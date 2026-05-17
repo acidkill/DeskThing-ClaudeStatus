@@ -44,6 +44,14 @@ const start = async (): Promise<StopFn> => {
 
   const disposers: Array<() => void> = [disposeActions];
 
+  let cancelInterval: (() => void) | null = null;
+  const startInterval = (sec: number): void => {
+    if (cancelInterval) cancelInterval();
+    cancelInterval = DeskThing.setInterval(async () => {
+      await poller.poll('tick');
+    }, Math.max(sec, 30) * 1000);
+  };
+
   const disposeSettings = DeskThing.on(DESKTHING_EVENTS.SETTINGS, (event: unknown) => {
     const payload = (event as { payload?: Record<string, { value?: unknown } | undefined> } | undefined)?.payload;
     if (!payload) return;
@@ -55,6 +63,9 @@ const start = async (): Promise<StopFn> => {
       mood: currentSettings.animationGroupOverride,
     });
     if (currentSettings.pollIntervalSec !== previousIntervalSec) {
+      // Restart the auto-poll loop at the new cadence (was previously left
+      // running at the old rate — auto-poll silently ignored the change).
+      startInterval(currentSettings.pollIntervalSec);
       void poller.poll('settings-change');
     } else {
       // Re-derive mood from last snapshot immediately — no API call needed.
@@ -76,10 +87,11 @@ const start = async (): Promise<StopFn> => {
 
   // Kick off the first poll immediately, then run on the configured interval.
   void poller.poll('manual');
-  const cancelInterval = DeskThing.setInterval(async () => {
-    await poller.poll('tick');
-  }, Math.max(currentSettings.pollIntervalSec, 30) * 1000);
-  disposers.push(cancelInterval);
+  startInterval(currentSettings.pollIntervalSec);
+  disposers.push(() => {
+    if (cancelInterval) cancelInterval();
+    cancelInterval = null;
+  });
 
   return async () => {
     for (const dispose of disposers) {

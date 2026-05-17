@@ -89,3 +89,35 @@ All notable changes to this project will be documented in this file. Format: Kee
 
 ### Fixed
 - App always showing `idle` mood even during active Claude Code sessions.
+
+## [0.3.2] — 2026-05-17
+
+### Fixed
+- **Mood flickering busy → idle while still working.** Root cause: the 5-minute
+  sliding sample window pruned past the user's last visible counter tick, and
+  all three existing signals (`rateMood` / `movementMood` / `absoluteMood`)
+  lost memory of activity. With Sonnet 4.6 normal-use granularity
+  (~0.01–0.05 pp/min, frequent 1–3 poll plateaus), the rate window slides
+  past the only tick before the next one arrives → mood snaps to idle even
+  though Claude is humming.
+- **Auto-poll interval not restarting on `pollIntervalSec` change.** The
+  settings handler kicked off a one-shot manual poll but left
+  `DeskThing.setInterval` ticking at the original rate. Now the interval is
+  cancelled and re-armed when the setting changes.
+
+### Added
+- `MoodTracker.lastForwardAt` — cross-window memory of the last observed
+  forward movement on *either* the session-5h or weekly-7d counter. Outlives
+  the 5-minute sample window. While `now - lastForwardAt ≤ 10 min`, the
+  derived mood is at least `active`. Survives 5h-counter resets so a user
+  working through a reset doesn't snap to idle.
+- `MoodTracker.lastForwardTimestamp()` — exposed for diagnostics; the poller
+  now logs `lastForwardAgoSec` in every `poll ok` line so it's visible in
+  DeskThing logs how stale the activity memory is.
+- Weekly utilisation is now passed into `MoodTracker.record()`; either
+  counter ticking up resets the activity memory.
+
+### Tests
+- 5 new Vitest cases covering: long-tail plateau bridging, 10-minute fall-off,
+  weekly-counter movement triggering memory, diagnostics exposure, and
+  preservation across 5h-counter resets. Total: 67 tests, all passing.

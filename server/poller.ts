@@ -63,12 +63,13 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
         const creds = await readCredentials(settings.credentialsPath);
         const snapshot = await pingAnthropic(creds.accessToken);
         lastSnapshot = snapshot;
-        mood.record(snapshot.sessionPct);
+        mood.record(snapshot.sessionPct, snapshot.weeklyPct);
         const ratePpm = mood.ratePctPerMin();
         const payload = buildUsagePayload(snapshot, mood.derive(settings.animationGroupOverride));
         deps.send({ type: 'usage', payload });
         consecutive429 = 0;
         backoffUntil = 0;
+        const lastFwd = mood.lastForwardTimestamp();
         log.info('poll ok', {
           s: payload.s,
           w: payload.w,
@@ -78,6 +79,7 @@ export const createPoller = (deps: { send: Send; getSettings: GetSettings }): Po
           mood: payload.mood,
           ratePpm,
           samples: mood.size(),
+          lastForwardAgoSec: lastFwd === null ? null : Math.round((Date.now() - lastFwd) / 1000),
           reason,
         });
       } catch (err) {
