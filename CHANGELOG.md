@@ -136,3 +136,41 @@ All notable changes to this project will be documented in this file. Format: Kee
   hand-editing 20×20 grids. Run with `node scripts/generate-idle-sprites.mjs`.
 - Both new sprites are in the `Idle` category, so they enter the rotation
   whenever mood resolves to `idle` (cycled every `splashRotateSec`).
+
+## [0.3.4] — 2026-05-17
+
+### Fixed
+- **Mood stuck at `active`, never escalating to `busy` / `frantic`.** The
+  v0.3.2 memory signal only ever returned `active`, so users generating
+  thousands of tokens with multiple visible counter ticks within minutes
+  still saw the mascot at the lowest non-idle tier.
+- **Mood dropping to `idle` after 10 minutes despite active use.** The 10-min
+  memory window was too short for Sonnet 4.6's granular unified-5h counter,
+  which often plateaus 5–15 minutes between visible ticks during normal
+  conversation.
+
+### Changed
+- `MoodTracker` replaces the single `lastForwardAt` scalar with a
+  `forwardTicks: number[]` ring buffer of every observed forward tick
+  (session OR weekly counter), pruned to the last 20 minutes.
+- `recentMovementMood()` now counts ticks in the window and escalates:
+  - 0 ticks → `idle`
+  - 1 tick → `active`
+  - 2–3 ticks → `busy`
+  - ≥4 ticks → `frantic`
+- `ACTIVE_MEMORY_MS` bumped from 10 min → 20 min for stickier "still working"
+  detection on coarse-tick counters.
+- Poller log line gains `fwdTicks20m` so the tick-count signal is visible in
+  DeskThing logs alongside `ratePpm` and `lastForwardAgoSec`.
+
+### Added
+- `MoodTracker.recentTickCount(now)` — public diagnostics method exposing
+  the count of forward ticks in the memory window.
+
+### Tests
+- New Vitest case verifying 1/2/4-tick escalation through active → busy →
+  frantic.
+- New case verifying ticks are pruned out of the buffer past the 20-min
+  window.
+- Updated existing memory tests for the new 20-min window.
+- Total: 69 tests, all passing.
