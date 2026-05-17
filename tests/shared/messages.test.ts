@@ -10,7 +10,7 @@ import {
 
 describe('shared/messages', () => {
   it('exposes the canonical app id', () => {
-    expect(APP_ID).toBe('clawdmeter');
+    expect(APP_ID).toBe('claude-status');
   });
 
   it('defaults match CLAUDE.md §5', () => {

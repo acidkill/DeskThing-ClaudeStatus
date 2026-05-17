@@ -6,10 +6,10 @@ All notable changes to this project will be documented in this file. Format: Kee
 
 ### Added
 - Repository scaffold: Vite + React 18 + TypeScript + Tailwind 3, DeskThing CLI scripts, strict tsconfig with `noUncheckedIndexedAccess`.
-- `deskthing/manifest.json` for app id `clawdmeter`, server/client v11 compatibility.
+- `deskthing/manifest.json` for app id `claude-status`, server/client v11 compatibility.
 - Shared typed message contract in `shared/messages.ts` (`UsagePayload`, `ServerToClient`, `ClientToServer`, default settings, action ids).
 - Server skeleton with `start` / `stop` / `purge` lifecycle, redacting logger, and settings registration via `DeskThing.initSettings`.
-- Client stub renders Clawdmeter placeholder on a Car-Thing-sized viewport.
+- Client stub renders Claude Status placeholder on a Car-Thing-sized viewport.
 
 ### Added (Phase 3)
 - `server/credentials.ts`: reads `~/.claude/.credentials.json` (with `~` expansion), supports both `claudeAiOauth.accessToken` and `access_token` shapes, surfaces typed `CredentialsError` (`NOT_FOUND` / `UNREADABLE` / `INVALID_JSON` / `NO_TOKEN` / `EXPIRED`).
@@ -43,7 +43,7 @@ All notable changes to this project will be documented in this file. Format: Kee
 - Built client serves and renders `index.html` (HTTP 200 from a static server). Live rendering of the screens requires the DeskThing server runtime; no DeskThing instance available in this environment to verify the §10.3 / §10.4 / §10.5 DoD items end-to-end yet.
 
 ### Added (Phase 6)
-- `deskthing/icons/clawdmeter.svg`: original app icon rendered from the Pip mascot, hand-authored geometric primitives.
+- `deskthing/icons/claude-status.svg`: original app icon rendered from the Pip mascot, hand-authored geometric primitives.
 - Manifest tags expanded to include `utility`.
 
 ### Added (Phase 7)
@@ -76,4 +76,4 @@ All notable changes to this project will be documented in this file. Format: Kee
 
 ### Notes
 - Web fonts are still not bundled. `font-sans` / `font-mono` Tailwind tokens fall back to system UI fonts. Self-hosting OFL Inter + JetBrains Mono WOFF2 is a documented follow-up.
-- Live DeskThing-runtime verification (DoD §10.2–10.4) needs a real Car Thing or desktop DeskThing instance; install `dist/clawdmeter-deskthing-v0.1.0.zip` and walk the checklist.
+- Live DeskThing-runtime verification (DoD §10.2–10.4) needs a real Car Thing or desktop DeskThing instance; install `dist/claude-status-deskthing-v0.3.0.zip` and walk the checklist.

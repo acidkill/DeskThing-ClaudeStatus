@@ -1,5 +1,5 @@
 {
-  "app.title": "Clawdmeter",
+  "app.title": "Claude Status",
   "app.subtitle": "Claude Code usage at a glance",
   "usage.session.label": "Session",
   "usage.weekly.label": "Weekly",

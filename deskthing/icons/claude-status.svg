@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <title>Clawdmeter</title>
+  <title>Claude Status</title>
   <rect width="200" height="200" rx="44" fill="#0b0d10"/>
   <ellipse cx="100" cy="170" rx="46" ry="5" fill="#000" opacity="0.35"/>
   <ellipse cx="74" cy="160" rx="12" ry="5" fill="#2a8f9b"/>

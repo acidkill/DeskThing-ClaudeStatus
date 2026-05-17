@@ -32,19 +32,19 @@ export const log = {
   info(msg: string, meta?: Record<string, unknown>): void {
     const line = format(msg, meta);
     if (!callIfFn((DeskThing as unknown as { sendLog?: unknown }).sendLog, line)) {
-      console.log(`[clawdmeter] ${line}`);
+      console.log(`[claude-status] ${line}`);
     }
   },
   warn(msg: string, meta?: Record<string, unknown>): void {
     const line = format(msg, meta);
     if (!callIfFn((DeskThing as unknown as { sendWarning?: unknown }).sendWarning, line)) {
-      console.warn(`[clawdmeter] ${line}`);
+      console.warn(`[claude-status] ${line}`);
     }
   },
   error(msg: string, meta?: Record<string, unknown>): void {
     const line = format(msg, meta);
     if (!callIfFn((DeskThing as unknown as { sendError?: unknown }).sendError, line)) {
-      console.error(`[clawdmeter] ${line}`);
+      console.error(`[claude-status] ${line}`);
     }
   },
 };
