@@ -56,6 +56,10 @@ const start = async (): Promise<StopFn> => {
     });
     if (currentSettings.pollIntervalSec !== previousIntervalSec) {
       void poller.poll('settings-change');
+    } else {
+      // Re-derive mood from last snapshot immediately — no API call needed.
+      // This makes animationGroupOverride changes feel instant on device.
+      poller.broadcastMood();
     }
   });
   if (typeof disposeSettings === 'function') disposers.push(disposeSettings);
