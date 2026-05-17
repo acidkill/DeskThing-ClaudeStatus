@@ -4,12 +4,12 @@ export default defineConfig({
   development: {
     logging: {
       level: 'info',
-      prefix: '[Clawdmeter Server]',
+      prefix: '[Claude Status Server]',
     },
     client: {
       logging: {
         level: 'info',
-        prefix: '[Clawdmeter Client]',
+        prefix: '[Claude Status Client]',
         enableRemoteLogging: true,
       },
       clientPort: 3000,

@@ -15,11 +15,12 @@ const MIN_WINDOW_MS = 60 * 1000;
  */
 const RESET_DROP_PCT = 5;
 /**
- * Rate thresholds in pp/min, calibrated against Anthropic's 5h-utilisation
- * header. A 5-hour (300 min) session ÷ 100% = 0.33 pp/min to fill at the same
- * pace as the session resets — "frantic" starts there.
+ * Rate thresholds in pp/min. IDLE_MAX is kept low (0.02) because real Sonnet
+ * usage typically moves the unified-5h counter only 0.01–0.05 pp/min; the
+ * old value of 0.1 caused active sessions to read as idle. ACTIVE_MAX /
+ * BUSY_MAX preserve the previously-verified calibration for heavier usage.
  */
-const IDLE_MAX = 0.1;
+const IDLE_MAX = 0.02;
 const ACTIVE_MAX = 0.2;
 const BUSY_MAX = 0.33;
 /**
@@ -89,11 +90,12 @@ export class MoodTracker {
   }
 
   private movementMood(): Mood {
-    if (this.samples.length < 2) return 'idle';
-    const first = this.samples[0];
-    const last = this.samples[this.samples.length - 1];
-    if (!first || !last) return 'idle';
-    return last.sessionPct > first.sessionPct ? 'active' : 'idle';
+    for (let i = 1; i < this.samples.length; i++) {
+      const prev = this.samples[i - 1];
+      const curr = this.samples[i];
+      if (prev && curr && curr.sessionPct > prev.sessionPct) return 'active';
+    }
+    return 'idle';
   }
 
   /**

@@ -1,4 +1,4 @@
-export const APP_ID = 'clawdmeter' as const;
+export const APP_ID = 'claude-status' as const;
 
 export type UsageStatus = 'allowed' | 'allowed_warning' | 'rejecting' | 'unknown';
 export type Mood = 'idle' | 'active' | 'busy' | 'frantic';

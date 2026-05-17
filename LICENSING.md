@@ -8,7 +8,7 @@ This project is licensed under the **Apache License 2.0**. See `LICENSE` for the
 
 The upstream [Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) repository bundles assets whose redistribution rights are unclear — Anthropic-proprietary fonts (Tiempos Text, Styrene B) and Clawd mascot pixel-art scraped from a fan site. The upstream author flags this explicitly. **This port does not perpetuate that.** Concrete differences:
 
-- **Mascot.** This repo ships an original mascot called **Pip** — a cyan/teal capsule character with cheeks, eye-blink, body-breath, and a tiny swinging gauge needle. Hand-authored from geometric primitives in `src/components/MeterMascot.tsx` (in-app) and `deskthing/icons/clawdmeter.svg` (app icon). Distinct in shape, palette, and motif from Clawd; no derivative-work intent.
+- **Mascot.** This repo ships an original mascot called **Pip** — a cyan/teal capsule character with cheeks, eye-blink, body-breath, and a tiny swinging gauge needle. Hand-authored from geometric primitives in `src/components/MeterMascot.tsx` (in-app) and `deskthing/icons/claude-status.svg` (app icon). Distinct in shape, palette, and motif from Clawd; no derivative-work intent.
 - **Fonts.** No proprietary fonts ship in this repo. Tailwind tokens reference `Inter` and `JetBrains Mono` family names with a graceful fallback to `system-ui` / `ui-monospace`, so if those fonts are installed on the host the UI uses them, otherwise the OS default is used. Self-hosting open-licence Inter + JetBrains Mono WOFF2 under `public/fonts/` is a planned follow-up.
 - **Anthropic branding.** This is a third-party tool that reads the Anthropic API's rate-limit response headers. No Anthropic wordmark, logo, or brand fonts appear anywhere in the UI, the app icon, or the bundled assets.
 
@@ -16,7 +16,7 @@ The upstream [Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) reposit
 
 | Path                                        | Licence       | Origin                                                                                    |
 | ------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------- |
-| `deskthing/icons/clawdmeter.svg`            | Apache-2.0    | Original SVG of the Pip mascot, hand-authored for this repo.                              |
+| `deskthing/icons/claude-status.svg`         | Apache-2.0    | Original SVG of the Pip mascot, hand-authored for this repo.                              |
 | `src/components/MeterMascot.tsx` (SVG markup) | Apache-2.0  | Original mascot rendered as React SVG, hand-authored for this repo.                       |
 | `deskthing/manifest.json`                   | Apache-2.0    | Original.                                                                                  |
 | Code under `server/`, `src/`, `shared/`, `tests/` | Apache-2.0 | Original.                                                                                  |

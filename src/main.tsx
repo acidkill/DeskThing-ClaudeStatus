@@ -5,7 +5,7 @@ import App from './App';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {
-  throw new Error('Clawdmeter: #root element missing from index.html');
+  throw new Error('Claude Status: #root element missing from index.html');
 }
 
 createRoot(rootEl).render(
