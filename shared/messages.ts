@@ -19,6 +19,15 @@ export type ErrorPayload = {
   message: string;
 };
 
+export type KeystrokeBackendSetting =
+  | 'auto'
+  | 'osascript'
+  | 'xdotool'
+  | 'wtype'
+  | 'ydotool'
+  | 'powershell'
+  | 'off';
+
 export type SettingsSnapshot = {
   pollIntervalSec: number;
   credentialsPath: string;
@@ -26,6 +35,7 @@ export type SettingsSnapshot = {
   splashRotateSec: number;
   animationGroupOverride: 'auto' | Mood;
   usageWarningPct: number;
+  hostKeystrokeBackend: KeystrokeBackendSetting;
 };
 
 export type ActionId = (typeof ACTION_IDS)[keyof typeof ACTION_IDS];
@@ -52,6 +62,7 @@ export const SETTING_KEYS = {
   splashRotateSec: 'splashRotateSec',
   animationGroupOverride: 'animationGroupOverride',
   usageWarningPct: 'usageWarningPct',
+  hostKeystrokeBackend: 'hostKeystrokeBackend',
 } as const;
 
 export const ACTION_IDS = {
@@ -68,4 +79,5 @@ export const DEFAULT_SETTINGS: SettingsSnapshot = {
   splashRotateSec: 20,
   animationGroupOverride: 'auto',
   usageWarningPct: 80,
+  hostKeystrokeBackend: 'auto',
 };
