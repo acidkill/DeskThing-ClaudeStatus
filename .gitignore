@@ -55,3 +55,14 @@ coverage/
 .claude/
 !.claude/settings.json
 !.claude/settings.local.json.example
+
+# Serena MCP memories (per-machine knowledge base, not source)
+.serena/
+
+# Playwright MCP scratch (browser sessions, downloads)
+.playwright-mcp/
+
+# Sprite-pipeline reference material (Foozle CC0 source, ~12MB, re-downloadable)
+# Download instructions live in CHANGELOG; runtime never reads from here.
+assets-staging/
+scripts/sprite-pipeline/node_modules/

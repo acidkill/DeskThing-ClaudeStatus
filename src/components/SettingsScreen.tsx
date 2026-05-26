@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 
-import { ClawdSprite } from '../clawd/ClawdSprite';
+import { MascotSprite } from '../mascot/MascotSprite';
 import type { ErrorPayload, SettingsSnapshot } from '../../shared/messages';
 import { t } from '../i18n';
 
@@ -56,7 +56,7 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
       </div>
 
       <aside className="flex flex-col items-center justify-center">
-        <ClawdSprite mood={mood} size={180} />
+        <MascotSprite mood={mood} size={180} />
         <span className="text-xs uppercase tracking-widest text-clawd-muted">
           {settings.animationGroupOverride}
         </span>
