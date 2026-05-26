@@ -6,7 +6,7 @@ Live Claude Code session and weekly usage meters for the [Spotify Car Thing](htt
 
 - Show Claude Code session (5h) and weekly (7d) utilisation on the Car Thing's 800×480 display.
 - Surface reset countdowns and rate-limit status without leaving the dashboard.
-- Drive the Clawd pixel-art mascot through five idle animations (breathe / blink / look around / strawberry / bubbles) plus expression, work, and dance pools that escalate with usage rate.
+- Drive the original orange-robot pixel-art mascot through six idle animations (breathe / blink / look around / power-token / status-pings / data-panel reading) plus expression, work, and dance pools that escalate with usage rate.
 - Bridge granular counter plateaus with cross-window activity memory so the mascot doesn't snap to idle while Claude is still working.
 - Register host-keystroke actions (push-to-talk, mode toggle) bindable via DeskThing's mappings UI.
 - Run entirely through the DeskThing server/client architecture — no BLE, no systemd.
@@ -26,7 +26,7 @@ Live Claude Code session and weekly usage meters for the [Spotify Car Thing](htt
 ```
 
 - **Server** (`server/`, Node) is the only network caller. It reads the Claude Code OAuth token from disk, pings `POST https://api.anthropic.com/v1/messages` with a one-token Haiku call once per `pollIntervalSec`, parses the `anthropic-ratelimit-unified-*` headers, derives a mood, and broadcasts a typed `usage` payload over the DeskThing message bus.
-- **Client** (`src/`, React + Vite + Tailwind) listens for `usage`, `settings`, `error`, and `action:fired` events and renders the Usage / Splash / Settings screens. Offline by design — every asset (including Clawd sprite JSONs) is bundled, no runtime CDN.
+- **Client** (`src/`, React + Vite + Tailwind) listens for `usage`, `settings`, `error`, and `action:fired` events and renders the Usage / Splash / Settings screens. Offline by design — every asset (including mascot sprite JSONs) is bundled, no runtime CDN.
 - **Shared** (`shared/messages.ts`) is the typed contract between server and client. Server uses relative imports (`../shared/messages`); the DeskThing CLI's esbuild server build does not honour tsconfig path aliases. Client uses the `@shared` Vite alias.
 
 See `CHANGELOG.md` for shipped work.
@@ -60,15 +60,20 @@ npm install
 
 The standard pre-PR loop: `npm run typecheck && npm run lint && npm test && npm run build`.
 
-### Regenerating custom sprites
+### Regenerating mascot sprites
 
-`scripts/generate-sprites.mjs` builds the bespoke Clawd animations from a shared base pose + overlay primitives. Re-run after editing the shape definitions:
+All 17 mascot sprites are emitted by `scripts/sprite-pipeline/`:
+
+- `robot-base.mjs` — defines the `BASE_NEUTRAL` 20×20 pose, palette (`#D97757` Anthropic-orange + screen-blue + antenna-red + dark + transparent), and composer helpers (eye states, antenna sway, body breathe/sway/bounce, expressions).
+- `generate-robot-sprites.mjs` — emits all 17 sprite JSONs plus the `_index.json` manifest.
+
+Re-run after editing pose definitions or animation choreographies:
 
 ```bash
-node scripts/generate-sprites.mjs
+node scripts/sprite-pipeline/generate-robot-sprites.mjs
 ```
 
-Output overwrites `assets-proprietary/clawd/{idle_strawberry,idle_bubbles,idle_reading,work_blackboard}.json`. Vite's `import.meta.glob` picks them up on the next build.
+Output overwrites `assets/mascot/*.json`. Vite's `import.meta.glob` picks them up on the next build. The pipeline has its own minimal `node_modules` (only `pngjs` for offline inspection tooling); install once with `cd scripts/sprite-pipeline && npm install`.
 
 ## Install on a DeskThing server
 
@@ -89,7 +94,7 @@ Output overwrites `assets-proprietary/clawd/{idle_strawberry,idle_bubbles,idle_r
 
 Settings live on the DeskThing server and are pushed to the client via a typed `settings` message whenever they change.
 
-> `splashRotateSec` exists in `SettingsSnapshot` (default `20`) but is not currently registered in the DeskThing settings UI and is not read by any client component. The sprite-rotation cadence is hardcoded to `8` seconds inside `ClawdSprite`. Wiring `splashRotateSec` through the settings form is a planned follow-up.
+> `splashRotateSec` exists in `SettingsSnapshot` (default `20`) but is not currently registered in the DeskThing settings UI and is not read by any client component. The sprite-rotation cadence is hardcoded to `8` seconds inside `MascotSprite`. Wiring `splashRotateSec` through the settings form is a planned follow-up.
 
 ## Mood system
 
@@ -108,16 +113,16 @@ The memory signal (introduced in v0.3.2, count-based escalation added in v0.3.4)
 
 ### Sprite rotation
 
-Once a mood is derived, the client picks animations from a category pool and cycles between them every 8 seconds (hardcoded in `ClawdSprite`):
+Once a mood is derived, the client picks animations from a category pool and cycles between them every 8 seconds (hardcoded in `MascotSprite`):
 
-| Mood     | Pool         | Sprites                                                                 |
-| -------- | ------------ | ----------------------------------------------------------------------- |
-| idle     | `Idle`       | breathe, blink, look around, **strawberry**, **bubbles**, **reading**   |
-| active   | `Expressions`+`Idle` | wink, surprise, sleep, + idle pool                              |
-| busy     | `Work`       | coding (laptop), **blackboard** (physics formulas)                      |
-| frantic  | `Dance`      | bounce, sway, djmix, bounce_dj, sway_dj                                 |
+| Mood     | Pool         | Robot animations                                                                            |
+| -------- | ------------ | ------------------------------------------------------------------------------------------- |
+| idle     | `Idle`       | breathe, blink, look around, power-token, status-pings, data-panel reading                  |
+| active   | `Expressions`+`Idle` | wink, surprise, sleep + idle pool                                                   |
+| busy     | `Work`       | coding (keyboard tap + code-line pulses), blackboard (F=ma, E=mc²)                          |
+| frantic  | `Dance`      | bounce, sway, dj-mix (turntable + bounce + sway), bounce-dj, sway-dj                        |
 
-Bespoke animations added in this fork: `strawberry` + `bubbles` (v0.3.3), `reading` + `blackboard` (v0.3.5). `work_think` was demoted to category `Archive` in v0.3.5 — the file is still in the repo for reference but no longer rotates. All sprite data lives under `assets-proprietary/clawd/*.json` and is bundled into the client JS at build time via `import.meta.glob`.
+All 17 animations are original 20×20 pixel art, generated procedurally by `scripts/sprite-pipeline/generate-robot-sprites.mjs`. `work_think` lives in the `Archive` category — present for parity but not in any mood's rotation pool. All sprite data lives under `assets/mascot/*.json` and is bundled into the client JS at build time via `import.meta.glob`.
 
 The mood thresholds in `MoodTracker` are calibrated for Sonnet 4.6 normal-use granularity. Opus 4.7 burns budget ~5× faster per token, so the same user behaviour escalates mood more aggressively on Opus — this is intentional and reflects the actual rate of budget consumption.
 
@@ -154,4 +159,4 @@ Run with `npm test`. Watch mode: `npm run test:watch`. Coverage: `npm run test:c
 
 ## Licensing
 
-Code is Apache-2.0 (see `LICENSE`). The Clawd pixel-art sprites bundled under `assets-proprietary/clawd/` are third-party copyrighted material redistributed in this **private fork** under personal-use terms — see `LICENSING.md` and `assets-proprietary/NOTICE.md` for the full notice. Do not redistribute built zips containing the bundled sprites.
+Everything in this repository ships under the **Apache License 2.0** as of v0.4.0 — code, mascot sprites, manifests, icons. The previous proprietary-art dependency was retired when the mascot was swapped to an original orange-robot pixel-art set (anatomy inspired by Foozle's CC0 "Cute Platformer Robot"; all pixel data and choreographies are ours). Built ZIPs are freely redistributable. See `LICENSING.md` for the full inventory and attribution notes.

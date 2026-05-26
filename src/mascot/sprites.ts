@@ -15,7 +15,7 @@ export type Sprite = {
   frames: SpriteFrame[];
 };
 
-const RAW = import.meta.glob<Sprite>('/assets-proprietary/clawd/*.json', {
+const RAW = import.meta.glob<Sprite>('/assets/mascot/*.json', {
   eager: true,
   import: 'default',
 });
@@ -35,7 +35,7 @@ const MOOD_CATEGORIES: Record<Mood, ReadonlyArray<string>> = {
   frantic: ['Dance'],
 };
 
-export const hasClawdSprites = (): boolean => ALL.length > 0;
+export const hasMascotSprites = (): boolean => ALL.length > 0;
 
 export const spritesForMood = (mood: Mood): ReadonlyArray<Sprite> => {
   const cats = MOOD_CATEGORIES[mood];

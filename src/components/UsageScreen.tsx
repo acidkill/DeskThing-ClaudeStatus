@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 
 import type { SettingsSnapshot, UsagePayload } from '../../shared/messages';
-import { ClawdSprite } from '../clawd/ClawdSprite';
+import { MascotSprite } from '../mascot/MascotSprite';
 import { t } from '../i18n';
 import { ResetCountdown } from './ResetCountdown';
 import { StatusPill } from './StatusPill';
@@ -54,7 +54,7 @@ export const UsageScreen: FC<Props> = ({ usage, settings }) => {
       </div>
 
       <aside className="flex flex-col items-center justify-center gap-2">
-        <ClawdSprite mood={usage.mood} size={220} />
+        <MascotSprite mood={usage.mood} size={220} />
         <span className="text-xs uppercase tracking-widest text-clawd-muted">
           {t(`usage.mood.${usage.mood}` as const)}
         </span>

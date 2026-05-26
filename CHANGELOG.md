@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. Format: Keep a Changelog; versions follow SemVer.
 
+## [0.4.0] — 2026-05-26
+
+### Changed — Mascot redesign, full Apache-2.0 status
+- **Mascot swapped from proprietary Clawd to original orange-robot pixel-art.** 17 new sprites at `assets/mascot/*.json`, all generated procedurally by `scripts/sprite-pipeline/`. Anatomy reference: Foozle's CC0 "Cute Platformer Robot" (https://foozlecc.itch.io/cute-platformer-robot); all pixel data, palette, frame timings, and animation choreographies are original work.
+- **Palette:** Anthropic-orange (`#D97757`) + dark (`#1F1F1F`) + screen-blue (`#4A90E2`) + antenna-red (`#E64A4A`) + transparent. Individual sprites extend with prop-specific colours (keyboard green, blackboard, headphone gold, etc.).
+- **17 animations preserve the v0.3.5 mood category coverage:** idle (breathe, blink, look-around, power-token, status-pings, data-panel reading), expressions (wink, surprise, sleep), work (coding, blackboard), dance (bounce, sway, bounce-dj, sway-dj, dj-mix), archive (think).
+- **Licensing fully resolved.** Every file in the build ZIP is now Apache-2.0. The `assets-proprietary/` directory was renamed to `assets/mascot/` since the proprietary dependency no longer exists. `LICENSING.md` rewritten to reflect the new clean state.
+
+### Refactored — Clean-up after the swap
+- `src/clawd/` → `src/mascot/` (directory rename; preserves git history via `git mv`).
+- `ClawdSprite` → `MascotSprite` (component rename; same prop shape, same behaviour).
+- `hasClawdSprites()` → `hasMascotSprites()`.
+- Path alias `@clawd/*` → `@mascot/*` in `vite.config.ts` + `tsconfig.app.json`. No source file currently uses the alias; renamed for consistency.
+- Removed `scripts/generate-sprites.mjs` (old Clawd-anatomy generator; superseded by `scripts/sprite-pipeline/generate-robot-sprites.mjs`).
+- Removed stale `dist-design-handoff/clawd-current-assets-v0.3.5/` snapshot (proprietary Clawd data from the design-handoff era — no longer needed).
+- Removed legacy `assets-proprietary/NOTICE.md` (the proprietary notice is obsolete now that the mascot art is original).
+
+### Added — Sprite pipeline
+- `scripts/sprite-pipeline/robot-base.mjs` — shared 20×20 `BASE_NEUTRAL` pose, `BASE_PALETTE`, and ~15 composer helpers (`withEyesLeft`, `withWink`, `withSmile`, `withAntennaLeft`, `withBodyExpand`, `withSwayLeft`, `withBounceUp`, etc.).
+- `scripts/sprite-pipeline/generate-robot-sprites.mjs` — emits all 17 sprite JSONs + `_index.json`.
+- `scripts/sprite-pipeline/inspect.mjs`, `analyze-style.mjs` — read-only diagnostic utilities used during the design phase to verify Foozle's source format.
+- Pipeline ships its own minimal `package.json` (only `pngjs` for offline inspection); not bundled into the app.
+
+### Verified
+- `npm run typecheck` clean.
+- `npm test` — 69 tests pass across 7 files (no test changes needed; the renderer is format-agnostic and consumes the new sprites without modification).
+- `npm run build` — produces `dist/claude-status-deskthing-v0.4.0.zip` with all 17 robot sprites bundled.
+
 ## [Unreleased]
 
 ### Added
