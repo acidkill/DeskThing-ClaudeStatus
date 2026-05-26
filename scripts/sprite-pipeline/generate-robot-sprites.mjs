@@ -1,5 +1,5 @@
 // generate-robot-sprites.mjs — Emit all 17 robot-mascot JSON sprites.
-// Original 20×20 pixel art © DeskThing-ClawdMeter-app contributors, Apache-2.0.
+// Original 20×20 pixel art © DeskThing-ClaudeStatus contributors, Apache-2.0.
 // Anatomy reference: Foozle "Cute Platformer Robot" (CC0).
 //
 // Output: assets/mascot/*.json + updated _index.json
