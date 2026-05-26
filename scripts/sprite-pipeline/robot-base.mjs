@@ -223,3 +223,93 @@ export const withSquat = (g) => {
   for (let c = 0; c < 20; c += 1) out[9][c] = 0;
   return out;
 };
+
+// Right arm raised alongside the head (elbow bent up, forearm vertical)
+// Removes shoulder arm pixels, draws arm going up along right side (col 14-15)
+export const withRightArmUp = (g) => {
+  const out = cloneGrid(g);
+  out[10][14] = 0; out[10][15] = 0; out[10][16] = 0;
+  out[11][14] = 0; out[11][15] = 0; out[11][16] = 0;
+  out[9][14] = 1; out[9][15] = 1;  // upper arm at neck level
+  out[8][14] = 1; out[8][15] = 1;  // forearm at head-bottom
+  out[7][14] = 1; out[7][15] = 1;  // forearm at head-mid
+  out[6][14] = 1;                   // wrist at eye level
+  return out;
+};
+
+// Right arm fully raised, hand touching top of head (scratch position)
+export const withRightArmScratch = (g) => {
+  const out = withRightArmUp(g);
+  out[5][14] = 1;                   // arm higher (beside eyes)
+  out[4][14] = 1;                   // arm at head-top level
+  out[3][13] = 1; out[3][14] = 1;  // hand at top of head
+  out[2][13] = 1;                   // finger touching head top
+  return out;
+};
+
+// Right arm angled toward face (for eating / blowing bubbles)
+// Arm elbow bends inward — hand arrives near col 13-14 at mouth height
+export const withRightArmAtFace = (g) => {
+  const out = cloneGrid(g);
+  out[10][14] = 0; out[10][15] = 0; out[10][16] = 0;
+  out[11][14] = 0; out[11][15] = 0; out[11][16] = 0;
+  out[9][14] = 1; out[9][15] = 1;  // upper arm
+  out[8][13] = 1; out[8][14] = 1;  // elbow angling in
+  out[7][13] = 1; out[7][14] = 1;  // forearm
+  out[6][13] = 1;                   // hand/wrist near face
+  return out;
+};
+
+// Arms tucked behind back: remove shoulder extensions, show arms peeking at lower sides
+export const withArmsBehind = (g) => {
+  const out = cloneGrid(g);
+  out[10][3] = 0; out[10][4] = 0; out[10][5] = 0;
+  out[10][14] = 0; out[10][15] = 0; out[10][16] = 0;
+  out[11][3] = 0; out[11][4] = 0; out[11][5] = 0;
+  out[11][14] = 0; out[11][15] = 0; out[11][16] = 0;
+  // Arms visible from behind at lower-body sides
+  out[12][5] = 1; out[12][14] = 1;
+  out[13][4] = 1; out[13][5] = 1; out[13][13] = 1; out[13][14] = 1;
+  out[14][4] = 1; out[14][5] = 1; out[14][12] = 1; out[14][13] = 1;
+  return out;
+};
+
+// Shift entire robot 1 col left (for walking animation)
+export const withShiftLeft1 = (g) => {
+  const out = Array.from({ length: 20 }, () => Array(20).fill(0));
+  for (let r = 0; r < 20; r += 1) {
+    for (let c = 1; c < 20; c += 1) {
+      out[r][c - 1] = g[r][c];
+    }
+  }
+  return out;
+};
+
+// Shift entire robot 1 col right
+export const withShiftRight1 = (g) => {
+  const out = Array.from({ length: 20 }, () => Array(20).fill(0));
+  for (let r = 0; r < 20; r += 1) {
+    for (let c = 0; c < 19; c += 1) {
+      out[r][c + 1] = g[r][c];
+    }
+  }
+  return out;
+};
+
+// Lift left foot one row (simulates step / weight shift)
+// Left foot lives at row 18, cols 6-8 (dark/2)
+export const withLeftFootUp = (g) => {
+  const out = cloneGrid(g);
+  out[18][6] = 0; out[18][7] = 0; out[18][8] = 0;
+  out[17][6] = 2; out[17][7] = 2;
+  return out;
+};
+
+// Lift right foot one row
+// Right foot lives at row 18, cols 10-12 (dark/2)
+export const withRightFootUp = (g) => {
+  const out = cloneGrid(g);
+  out[18][10] = 0; out[18][11] = 0; out[18][12] = 0;
+  out[17][11] = 2; out[17][12] = 2;
+  return out;
+};
