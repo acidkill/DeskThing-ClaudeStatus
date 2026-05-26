@@ -8,6 +8,7 @@ import {
   type SettingsSnapshot,
 } from '../shared/messages';
 import { setupActions } from './actions';
+import { createKeyDispatcher, type KeyDispatcher } from './keys';
 import { log } from './log';
 import { createPoller } from './poller';
 import { readSettingsSnapshot, setupSettings } from './settings';
@@ -36,10 +37,21 @@ const start = async (): Promise<StopFn> => {
     broadcastSettings(currentSettings);
   }
 
+  let keyDispatcher: KeyDispatcher | null = null;
+  const ensureKeyDispatcher = async (backend: SettingsSnapshot['hostKeystrokeBackend']): Promise<void> => {
+    if (keyDispatcher) {
+      keyDispatcher.dispose();
+      keyDispatcher = null;
+    }
+    keyDispatcher = await createKeyDispatcher(backend);
+  };
+  await ensureKeyDispatcher(currentSettings.hostKeystrokeBackend);
+
   const poller = createPoller({ send, getSettings });
   const disposeActions = setupActions({
     send,
     onRefresh: () => poller.poll('manual'),
+    getKeyDispatcher: () => keyDispatcher,
   });
 
   const disposers: Array<() => void> = [disposeActions];
@@ -56,6 +68,7 @@ const start = async (): Promise<StopFn> => {
     const payload = (event as { payload?: Record<string, { value?: unknown } | undefined> } | undefined)?.payload;
     if (!payload) return;
     const previousIntervalSec = currentSettings.pollIntervalSec;
+    const previousKeystrokeBackend = currentSettings.hostKeystrokeBackend;
     currentSettings = readSettingsSnapshot(payload);
     broadcastSettings(currentSettings);
     log.info('settings updated', {
@@ -71,6 +84,9 @@ const start = async (): Promise<StopFn> => {
       // Re-derive mood from last snapshot immediately — no API call needed.
       // This makes animationGroupOverride changes feel instant on device.
       poller.broadcastMood();
+    }
+    if (currentSettings.hostKeystrokeBackend !== previousKeystrokeBackend) {
+      void ensureKeyDispatcher(currentSettings.hostKeystrokeBackend);
     }
   });
   if (typeof disposeSettings === 'function') disposers.push(disposeSettings);
@@ -102,6 +118,10 @@ const start = async (): Promise<StopFn> => {
       }
     }
     poller.dispose();
+    if (keyDispatcher) {
+      keyDispatcher.dispose();
+      keyDispatcher = null;
+    }
   };
 };
 

@@ -1,7 +1,7 @@
 import { DeskThing } from '@deskthing/server';
 import { type AppSettings, SETTING_TYPES } from '@deskthing/types';
 
-import { DEFAULT_SETTINGS, SETTING_KEYS, type SettingsSnapshot } from '../shared/messages';
+import { DEFAULT_SETTINGS, SETTING_KEYS, type KeystrokeBackendSetting, type SettingsSnapshot } from '../shared/messages';
 import { log } from './log';
 
 export const setupSettings = (): void => {
@@ -53,6 +53,22 @@ export const setupSettings = (): void => {
       max: 100,
       step: 1,
     },
+    [SETTING_KEYS.hostKeystrokeBackend]: {
+      id: SETTING_KEYS.hostKeystrokeBackend,
+      label: 'Host keystroke backend',
+      description: 'How DeskThing sends keystrokes to the host. "auto" probes available tools at startup.',
+      type: SETTING_TYPES.SELECT,
+      value: DEFAULT_SETTINGS.hostKeystrokeBackend,
+      options: [
+        { label: 'Auto-detect', value: 'auto' },
+        { label: 'osascript (macOS)', value: 'osascript' },
+        { label: 'xdotool (Linux/X11)', value: 'xdotool' },
+        { label: 'wtype (Linux/Wayland)', value: 'wtype' },
+        { label: 'ydotool (Linux/Wayland)', value: 'ydotool' },
+        { label: 'PowerShell (Windows)', value: 'powershell' },
+        { label: 'Disabled', value: 'off' },
+      ],
+    },
   };
 
   DeskThing.initSettings(settings);
@@ -93,6 +109,25 @@ const moodOverrideOrDefault = (
   return fallback;
 };
 
+const keystrokeBackendOrDefault = (
+  raw: unknown,
+  fallback: KeystrokeBackendSetting,
+): KeystrokeBackendSetting => {
+  const allowed: ReadonlyArray<KeystrokeBackendSetting> = [
+    'auto',
+    'osascript',
+    'xdotool',
+    'wtype',
+    'ydotool',
+    'powershell',
+    'off',
+  ];
+  if (typeof raw === 'string' && (allowed as ReadonlyArray<string>).includes(raw)) {
+    return raw as KeystrokeBackendSetting;
+  }
+  return fallback;
+};
+
 export const readSettingsSnapshot = (
   raw: Record<string, { value?: unknown } | undefined> | undefined,
 ): SettingsSnapshot => {
@@ -107,5 +142,9 @@ export const readSettingsSnapshot = (
       DEFAULT_SETTINGS.animationGroupOverride,
     ),
     usageWarningPct: numberOrDefault(v(SETTING_KEYS.usageWarningPct), DEFAULT_SETTINGS.usageWarningPct),
+    hostKeystrokeBackend: keystrokeBackendOrDefault(
+      v(SETTING_KEYS.hostKeystrokeBackend),
+      DEFAULT_SETTINGS.hostKeystrokeBackend,
+    ),
   };
 };
