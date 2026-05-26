@@ -18,6 +18,7 @@ import {
   withAntennaDim,
   withAntennaLeft,
   withAntennaRight,
+  withArmsBehind,
   withBodyExpand,
   withBounceUp,
   withEyesClosed,
@@ -25,7 +26,14 @@ import {
   withEyesRight,
   withEyesUp,
   withEyesWide,
+  withLeftFootUp,
   withOpenMouth,
+  withRightArmAtFace,
+  withRightArmScratch,
+  withRightArmUp,
+  withRightFootUp,
+  withShiftLeft1,
+  withShiftRight1,
   withSmile,
   withSquat,
   withSwayLeft,
@@ -52,17 +60,20 @@ const idleBreathe = buildSprite({
   filename: 'idle_breathe.html',
   name: 'idle breathe',
   category: 'Idle',
-  description: 'Robot stands at ease; chassis subtly expands and contracts.',
+  description: 'Robot breathes; chest expands and legs shift weight between breaths.',
   palette: BASE_PALETTE,
   frames: [
     { hold: 480, build: () => cloneGrid(baseGrid) },
     { hold: 320, build: () => withBodyExpand(baseGrid) },
     { hold: 480, build: () => withBodyExpand(baseGrid) },
     { hold: 320, build: () => cloneGrid(baseGrid) },
-    { hold: 480, build: () => cloneGrid(baseGrid) },
+    { hold: 240, build: () => withLeftFootUp(baseGrid) },     // weight shift
+    { hold: 240, build: () => cloneGrid(baseGrid) },
     { hold: 320, build: () => withBodyExpand(baseGrid) },
     { hold: 480, build: () => withBodyExpand(baseGrid) },
     { hold: 320, build: () => cloneGrid(baseGrid) },
+    { hold: 240, build: () => withRightFootUp(baseGrid) },    // weight shift other side
+    { hold: 240, build: () => cloneGrid(baseGrid) },
   ],
 });
 
@@ -113,21 +124,30 @@ const idleStrawberry = buildSprite({
   filename: 'idle_strawberry.html',
   name: 'idle strawberry',
   category: 'Idle',
-  description: 'Robot absorbs a power token; antenna sparks brightly afterwards.',
+  description: 'Robot spots a power token, reaches out, picks it up, eats it; antenna sparks.',
   palette: STRAWBERRY_PALETTE,
   frames: [
-    { hold: 600, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 11, 15, TOKEN_FULL); return g; } },
-    { hold: 300, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 10, 13, TOKEN_FULL); return g; } },
-    { hold: 220, build: () => { const g = withOpenMouth(baseGrid); drawAt(g, 9, 11, TOKEN_FULL); return g; } },
-    { hold: 280, build: () => { const g = withOpenMouth(baseGrid); drawAt(g, 9, 11, TOKEN_HALF); return g; } },
-    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 9, 11, TOKEN_HALF); return g; } },
+    // Token visible at distance — arm starts to reach
+    { hold: 400, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 11, 15, TOKEN_FULL); return g; } },
+    { hold: 280, build: () => { const g = withRightArmUp(baseGrid); drawAt(g, 11, 15, TOKEN_FULL); return g; } },
+    // Arm grabs token (arm up, token now beside hand)
+    { hold: 220, build: () => { const g = withRightArmUp(baseGrid); drawAt(g, 8, 14, TOKEN_FULL); return g; } },
+    // Arm brings token to mouth (arm at face, token at mouth level)
+    { hold: 220, build: () => { const g = withRightArmAtFace(baseGrid); drawAt(g, 6, 13, TOKEN_FULL); return g; } },
+    // Eat: open mouth, token disappears half-way
+    { hold: 220, build: () => { const g = withOpenMouth(withRightArmAtFace(baseGrid)); drawAt(g, 6, 13, TOKEN_HALF); return g; } },
+    { hold: 220, build: () => withOpenMouth(withRightArmAtFace(baseGrid)) },
+    // Arm lowers, smile
+    { hold: 240, build: () => withRightArmUp(baseGrid) },
+    { hold: 240, build: () => withSmile(baseGrid) },
+    // Antenna sparks
     { hold: 240, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 0, 8, SPARK); return g; } },
     { hold: 500, build: () => withSmile(baseGrid) },
     { hold: 400, build: () => cloneGrid(baseGrid) },
   ],
 });
 
-// idle_bubbles → status-ping particles
+// idle_bubbles → status-ping particles  ← FIXED: arm moves to mouth before blowing
 const BUBBLES_PALETTE = [...BASE_PALETTE, '#88c8e8', '#ffffff'];
 const PING = ['.5.', '5.5', '.5.'];
 const PING_BIG = ['.55.', '5..5', '5..5', '.55.'];
@@ -137,20 +157,27 @@ const idleBubbles = buildSprite({
   filename: 'idle_bubbles.html',
   name: 'idle bubbles',
   category: 'Idle',
-  description: 'Robot emits status-ping particles that float up and dissipate.',
+  description: 'Robot raises hand to mouth and blows status-ping bubbles that float up.',
   palette: BUBBLES_PALETTE,
   frames: [
+    { hold: 400, build: () => cloneGrid(baseGrid) },
+    // Arm raises toward face
+    { hold: 220, build: () => withRightArmUp(baseGrid) },
+    { hold: 220, build: () => withRightArmAtFace(baseGrid) },
+    // Puff: open mouth, arm at face
+    { hold: 280, build: () => withOpenMouth(withRightArmAtFace(baseGrid)) },
+    // First bubble appears near mouth/hand
+    { hold: 220, build: () => { const g = withRightArmAtFace(baseGrid); drawAt(g, 8, 12, PING); return g; } },
+    // Bubble floats up
+    { hold: 220, build: () => { const g = withRightArmAtFace(baseGrid); drawAt(g, 5, 11, PING); return g; } },
+    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 3, 10, PING_BIG); return g; } },
+    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 1, 9, PING_BIG); return g; } },
+    { hold: 160, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 0, 9, PING_POP); return g; } },
     { hold: 500, build: () => cloneGrid(baseGrid) },
-    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 8, 9, PING); return g; } },
-    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 6, 9, PING); return g; } },
-    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 4, 9, PING_BIG); return g; } },
-    { hold: 220, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 2, 8, PING_BIG); return g; } },
-    { hold: 160, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 1, 8, PING_POP); return g; } },
-    { hold: 600, build: () => cloneGrid(baseGrid) },
   ],
 });
 
-// idle_reading → holographic data panel
+// idle_reading → holographic data panel  ← IMPROVED: right arm holds/points at panel
 const READING_PALETTE = [...BASE_PALETTE, '#3a2e22', '#f0e6d2'];
 const PANEL_A = [
   '555555',
@@ -171,16 +198,148 @@ const idleReading = buildSprite({
   filename: 'idle_reading.html',
   name: 'idle reading',
   category: 'Idle',
-  description: 'Robot studies a hovering data-panel; eyes scan as content scrolls.',
+  description: 'Robot holds up a holographic data panel and scans it with its eyes.',
   palette: READING_PALETTE,
   frames: [
-    { hold: 380, build: () => { const g = withEyesLeft(baseGrid); drawAt(g, 11, 13, PANEL_A); return g; } },
-    { hold: 380, build: () => { const g = withEyesRight(baseGrid); drawAt(g, 11, 13, PANEL_A); return g; } },
-    { hold: 380, build: () => { const g = withEyesLeft(baseGrid); drawAt(g, 11, 13, PANEL_B); return g; } },
-    { hold: 380, build: () => { const g = withEyesRight(baseGrid); drawAt(g, 11, 13, PANEL_B); return g; } },
-    { hold: 260, build: () => { const g = cloneGrid(baseGrid); drawAt(g, 11, 13, PANEL_A); return g; } },
-    { hold: 380, build: () => { const g = withEyesLeft(baseGrid); drawAt(g, 11, 13, PANEL_A); return g; } },
-    { hold: 380, build: () => { const g = withEyesRight(baseGrid); drawAt(g, 11, 13, PANEL_B); return g; } },
+    // Arm raises to hold panel
+    { hold: 300, build: () => { const g = withRightArmUp(baseGrid); drawAt(g, 6, 14, PANEL_A); return g; } },
+    { hold: 380, build: () => { const g = withEyesLeft(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_A); return g; } },
+    { hold: 380, build: () => { const g = withEyesRight(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_A); return g; } },
+    { hold: 380, build: () => { const g = withEyesLeft(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_B); return g; } },
+    { hold: 380, build: () => { const g = withEyesRight(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_B); return g; } },
+    { hold: 260, build: () => { const g = withRightArmUp(baseGrid); drawAt(g, 6, 14, PANEL_A); return g; } },
+    { hold: 380, build: () => { const g = withEyesLeft(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_A); return g; } },
+    { hold: 380, build: () => { const g = withEyesRight(withRightArmUp(baseGrid)); drawAt(g, 6, 14, PANEL_B); return g; } },
+    // Lower arm and blink — reading break
+    { hold: 300, build: () => cloneGrid(baseGrid) },
+    { hold: 80,  build: () => withEyesClosed(baseGrid) },
+    { hold: 80,  build: () => withEyesClosed(baseGrid) },
+    { hold: 300, build: () => cloneGrid(baseGrid) },
+  ],
+});
+
+// ─── NEW idle animations ──────────────────────────────────────────────────────
+
+// idle_scratch_head — robot scratches head then has a lightbulb moment
+const SCRATCH_PALETTE = [...BASE_PALETTE, '#FFD700']; // 5 = gold for bulb
+const BULB = ['.5.', '555', '555', '.5.']; // small lightbulb shape
+const BULB_GLOW = ['.5.', '565', '565', '.5.']; // brighter (5=gold, 6 unused → just brighter gold)
+const SCRATCH_MARK = ['2']; // tiny scratch mark pixel near head
+
+const idleScratchHead = buildSprite({
+  filename: 'idle_scratch_head.html',
+  name: 'idle scratch head',
+  category: 'Idle',
+  description: 'Robot scratches its head, then gets a lightbulb moment.',
+  palette: SCRATCH_PALETTE,
+  frames: [
+    { hold: 500, build: () => cloneGrid(baseGrid) },
+    // Arm starts raising
+    { hold: 280, build: () => withRightArmUp(baseGrid) },
+    // Arm at head — scratch
+    { hold: 180, build: () => { const g = withRightArmScratch(baseGrid); drawAt(g, 2, 11, SCRATCH_MARK); return g; } },
+    { hold: 120, build: () => withRightArmScratch(withEyesUp(baseGrid)) },
+    { hold: 180, build: () => { const g = withRightArmScratch(baseGrid); drawAt(g, 2, 11, SCRATCH_MARK); return g; } },
+    { hold: 120, build: () => withRightArmScratch(withEyesUp(baseGrid)) },
+    { hold: 180, build: () => { const g = withRightArmScratch(baseGrid); drawAt(g, 2, 11, SCRATCH_MARK); return g; } },
+    // Arm lowers
+    { hold: 280, build: () => withRightArmUp(baseGrid) },
+    { hold: 300, build: () => cloneGrid(baseGrid) },
+    // Lightbulb appears above head (right of antenna)
+    { hold: 200, build: () => { const g = withEyesUp(baseGrid); drawAt(g, 0, 12, BULB); return g; } },
+    { hold: 400, build: () => { const g = withEyesWide(withSmile(baseGrid)); drawAt(g, 0, 12, BULB); return g; } },
+    { hold: 400, build: () => { const g = withSmile(baseGrid); drawAt(g, 0, 12, BULB); return g; } },
+    // Lightbulb fades
+    { hold: 200, build: () => withSmile(baseGrid) },
+    { hold: 600, build: () => cloneGrid(baseGrid) },
+  ],
+});
+
+// idle_walk — robot folds arms behind back and strolls left then right
+const idleWalk = buildSprite({
+  filename: 'idle_walk.html',
+  name: 'idle walk',
+  category: 'Idle',
+  description: 'Robot strolls left and right with arms clasped behind its back.',
+  palette: BASE_PALETTE,
+  frames: [
+    { hold: 300, build: () => withArmsBehind(baseGrid) },
+    // Walk right: shift right + alternating feet
+    { hold: 220, build: () => withShiftRight1(withLeftFootUp(withArmsBehind(baseGrid))) },
+    { hold: 220, build: () => withShiftRight1(withShiftRight1(withArmsBehind(baseGrid))) },
+    { hold: 220, build: () => withShiftRight1(withRightFootUp(withArmsBehind(baseGrid))) },
+    { hold: 280, build: () => withArmsBehind(baseGrid) },
+    // Walk left: shift left + alternating feet
+    { hold: 220, build: () => withShiftLeft1(withRightFootUp(withArmsBehind(baseGrid))) },
+    { hold: 220, build: () => withShiftLeft1(withShiftLeft1(withArmsBehind(baseGrid))) },
+    { hold: 220, build: () => withShiftLeft1(withLeftFootUp(withArmsBehind(baseGrid))) },
+  ],
+});
+
+// idle_jump_rope — robot pulls out a jump rope and skips with it
+const ROPE_PALETTE = [...BASE_PALETTE, '#C8A86B']; // 5 = rope straw-yellow
+const ROPE_ARC = ['....55555555555.....'];          // rope overhead (1 row wide)
+const ROPE_LOW  = ['......5555555.......'];          // rope passing under feet
+const HANDLE_R  = ['5', '5'];                        // rope handle in right hand
+
+const idleJumpRope = buildSprite({
+  filename: 'idle_jump_rope.html',
+  name: 'idle jump rope',
+  category: 'Idle',
+  description: 'Bored robot produces a jump rope and starts skipping.',
+  palette: ROPE_PALETTE,
+  frames: [
+    { hold: 400, build: () => cloneGrid(baseGrid) },
+    // Pull rope from behind — arms raise with handles
+    { hold: 300, build: () => withRightArmUp(baseGrid) },
+    { hold: 300, build: () => {
+        const g = withRightArmUp(baseGrid);
+        drawAt(g, 6, 14, HANDLE_R);   // rope handle in raised right hand
+        return g;
+    }},
+    // Rope overhead — robot bounces up
+    { hold: 160, build: () => {
+        const g = withBounceUp(withRightArmUp(baseGrid));
+        drawAt(g, 0, 0, ROPE_ARC);
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    // Rope swings under feet — robot still up
+    { hold: 160, build: () => {
+        const g = withBounceUp(withRightArmUp(baseGrid));
+        drawAt(g, 19, 0, ROPE_LOW);
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    // Land — squat
+    { hold: 160, build: () => {
+        const g = withSquat(withRightArmUp(baseGrid));
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    // Second jump — rope overhead
+    { hold: 160, build: () => {
+        const g = withBounceUp(withRightArmUp(baseGrid));
+        drawAt(g, 0, 0, ROPE_ARC);
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    { hold: 160, build: () => {
+        const g = withBounceUp(withRightArmUp(baseGrid));
+        drawAt(g, 19, 0, ROPE_LOW);
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    // Land + smile (it's fun!)
+    { hold: 180, build: () => {
+        const g = withSquat(withSmile(withRightArmUp(baseGrid)));
+        drawAt(g, 6, 14, HANDLE_R);
+        return g;
+    }},
+    // Put rope away — arm lowers
+    { hold: 300, build: () => withRightArmUp(baseGrid) },
+    { hold: 400, build: () => withSmile(baseGrid) },
+    { hold: 500, build: () => cloneGrid(baseGrid) },
   ],
 });
 
@@ -281,77 +440,54 @@ const workCoding = buildSprite({
   ],
 });
 
-// work_blackboard
-const BLACKBOARD_PALETTE = [
+// work_blackboard → REPLACED by work_wand: magic wand wave + sparkles
+const WAND_PALETTE = [
   ...BASE_PALETTE,
-  '#1F3A26', // 5 board green
-  '#F5F5E8', // 6 chalk white
-  '#8B6A3A', // 7 frame brown
+  '#FFD700', // 5 gold/star
+  '#FFFFFF', // 6 white sparkle
 ];
+const WAND_STICK = ['1', '1', '1'];  // 3-px orange handle
+const STAR_TIP   = ['656', '666', '656'];  // 3×3 gold+white star burst
+const SPARK_CROSS = ['.5.', '555', '.5.']; // cross sparkle
+const SPARK_SCATTER = ['5.5', '.5.', '5.5']; // diagonal scatter
+const SPARK_SINGLE = ['5'];
 
-const BOARD_EMPTY = [
-  '77777777777777',
-  '75555555555557',
-  '75555555555557',
-  '75555555555557',
-  '75555555555557',
-  '77777777777777',
-];
+// Right arm extended + wand pointing up-right (arm along col 14, wand at col 15-16 rows 3-5)
+const withWandArmUp = (g) => {
+  const out = withRightArmUp(g);
+  drawAt(out, 3, 15, WAND_STICK);  // wand handle above hand
+  return out;
+};
+// Wand sweeping to the right (arm stays, wand tip moves right)
+const withWandArmRight = (g) => {
+  const out = withRightArmUp(g);
+  // wand handle at col 16-17 row 6 (horizontal extension)
+  out[6][15] = 1; out[6][16] = 1; out[6][17] = 1;
+  return out;
+};
 
-const BOARD_FMA = [
-  '77777777777777',
-  '75555555555557',
-  '76555655566557',
-  '76555655555557',
-  '76555655566657',
-  '77777777777777',
-];
-
-const BOARD_EMC = [
-  '77777777777777',
-  '75555555555557',
-  '76665666555557',
-  '76555655555557',
-  '76665655565557',
-  '77777777777777',
-];
-
-const compactRobot = () => parseGrid([
-  '....................',
-  '....................',
-  '....................',
-  '....................',
-  '....................',
-  '....................',
-  '....................',
-  '.......111111.......',
-  '......11333311......',
-  '......13233231......',
-  '......13333331......',
-  '......11333311......',
-  '.......111111.......',
-  '........1111........',
-  '...11111111111111...',
-  '...11111111111111...',
-  '......11111111......',
-  '......11111111......',
-  '.......111111.......',
-  '......222.222.......',
-]);
-
-const workBlackboard = buildSprite({
-  filename: 'work_blackboard.html',
-  name: 'work blackboard',
+const workWand = buildSprite({
+  filename: 'work_blackboard.html',  // keep filename for backwards-compat
+  name: 'work wand',
   category: 'Work',
-  description: 'Robot writes physics formulas (F=ma, E=mc²) on a blackboard.',
-  palette: BLACKBOARD_PALETTE,
+  description: 'Robot waves a magic wand; a star bursts at the tip and sparkles scatter.',
+  palette: WAND_PALETTE,
   frames: [
-    { hold: 500, build: () => { const g = compactRobot(); drawAt(g, 0, 3, BOARD_EMPTY); return g; } },
-    { hold: 600, build: () => { const g = compactRobot(); drawAt(g, 0, 3, BOARD_FMA); return g; } },
-    { hold: 400, build: () => { const g = compactRobot(); drawAt(g, 0, 3, BOARD_FMA); return g; } },
-    { hold: 220, build: () => { const g = compactRobot(); drawAt(g, 0, 3, BOARD_EMPTY); return g; } },
-    { hold: 600, build: () => { const g = compactRobot(); drawAt(g, 0, 3, BOARD_EMC); return g; } },
-    { hold: 700, build: () => { const g = withSmile(compactRobot()); drawAt(g, 0, 3, BOARD_EMC); return g; } },
+    // Wind up — arm raises, wand appears
+    { hold: 300, build: () => withRightArmUp(baseGrid) },
+    { hold: 300, build: () => withWandArmUp(baseGrid) },
+    // Wave sweep right — star trails
+    { hold: 180, build: () => { const g = withWandArmRight(baseGrid); drawAt(g, 2, 15, SPARK_SINGLE); return g; } },
+    { hold: 160, build: () => { const g = withWandArmRight(baseGrid); drawAt(g, 2, 15, SPARK_CROSS); return g; } },
+    // Star burst at wand tip!
+    { hold: 180, build: () => { const g = withWandArmRight(baseGrid); drawAt(g, 4, 16, STAR_TIP); return g; } },
+    { hold: 240, build: () => { const g = withSmile(withWandArmRight(baseGrid)); drawAt(g, 3, 15, STAR_TIP); return g; } },
+    // Sparkles scatter outward
+    { hold: 180, build: () => { const g = withSmile(withRightArmUp(baseGrid)); drawAt(g, 2, 15, SPARK_SCATTER); drawAt(g, 4, 17, SPARK_SINGLE); return g; } },
+    { hold: 180, build: () => { const g = withSmile(withRightArmUp(baseGrid)); drawAt(g, 1, 13, SPARK_SINGLE); drawAt(g, 3, 17, SPARK_SINGLE); drawAt(g, 5, 16, SPARK_SINGLE); return g; } },
+    // Sparkles fade, arm lowers
+    { hold: 220, build: () => withSmile(baseGrid) },
+    { hold: 400, build: () => cloneGrid(baseGrid) },
   ],
 });
 
@@ -489,11 +625,14 @@ const ALL = [
   idleStrawberry,
   idleBubbles,
   idleReading,
+  idleScratchHead,
+  idleWalk,
+  idleJumpRope,
   expressionWink,
   expressionSurprise,
   expressionSleep,
   workCoding,
-  workBlackboard,
+  workWand,
   danceBounce,
   danceSway,
   danceBounceDj,
