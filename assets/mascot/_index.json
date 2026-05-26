@@ -3,7 +3,7 @@
     "filename": "idle_breathe.html",
     "name": "idle breathe",
     "category": "Idle",
-    "frame_count": 8,
+    "frame_count": 11,
     "palette_size": 5
   },
   {
@@ -24,22 +24,43 @@
     "filename": "idle_strawberry.html",
     "name": "idle strawberry",
     "category": "Idle",
-    "frame_count": 8,
+    "frame_count": 11,
     "palette_size": 6
   },
   {
     "filename": "idle_bubbles.html",
     "name": "idle bubbles",
     "category": "Idle",
-    "frame_count": 7,
+    "frame_count": 10,
     "palette_size": 7
   },
   {
     "filename": "idle_reading.html",
     "name": "idle reading",
     "category": "Idle",
-    "frame_count": 7,
+    "frame_count": 12,
     "palette_size": 7
+  },
+  {
+    "filename": "idle_scratch_head.html",
+    "name": "idle scratch head",
+    "category": "Idle",
+    "frame_count": 14,
+    "palette_size": 6
+  },
+  {
+    "filename": "idle_walk.html",
+    "name": "idle walk",
+    "category": "Idle",
+    "frame_count": 8,
+    "palette_size": 5
+  },
+  {
+    "filename": "idle_jump_rope.html",
+    "name": "idle jump rope",
+    "category": "Idle",
+    "frame_count": 12,
+    "palette_size": 6
   },
   {
     "filename": "expression_wink.html",
@@ -71,10 +92,10 @@
   },
   {
     "filename": "work_blackboard.html",
-    "name": "work blackboard",
+    "name": "work wand",
     "category": "Work",
-    "frame_count": 6,
-    "palette_size": 8
+    "frame_count": 10,
+    "palette_size": 7
   },
   {
     "filename": "dance_bounce.html",
