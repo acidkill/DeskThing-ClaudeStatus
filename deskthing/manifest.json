@@ -11,7 +11,7 @@
   "author": "acidkill",
   "platforms": ["windows", "mac", "linux"],
   "homepage": "",
-  "repository": "https://github.com/acidkill/DeskThing-ClawdMeter-app",
+  "repository": "https://github.com/acidkill/DeskThing-ClaudeStatus",
   "tags": ["webappOnly", "utility"],
   "requiredVersions": { "server": ">=0.11.0", "client": ">=0.11.0" },
   "updateUrl": "",

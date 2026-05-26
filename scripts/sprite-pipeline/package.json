@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Offline sprite pipeline: PNG → recolor → JSON-grid for ClawdMeter mascot",
+  "description": "Offline sprite pipeline: JSON-grid sprite emitter for Claude Status robot mascot",
   "scripts": {
     "inspect": "node inspect.mjs",
     "recolor": "node recolor.mjs",
