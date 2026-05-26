@@ -30,7 +30,7 @@ const drawFrame = (ctx: CanvasRenderingContext2D, sprite: Sprite, frameIdx: numb
   }
 };
 
-export const ClawdSprite: FC<Props> = ({ mood, size = 360, rotateSec = 8 }) => {
+export const MascotSprite: FC<Props> = ({ mood, size = 360, rotateSec = 8 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const candidates = spritesForMood(mood);
   const [spriteIdx, setSpriteIdx] = useState(0);
@@ -92,7 +92,7 @@ export const ClawdSprite: FC<Props> = ({ mood, size = 360, rotateSec = 8 }) => {
     <canvas
       ref={canvasRef}
       role="img"
-      aria-label={`Clawd sprite — ${sprite.name}, mood ${mood}`}
+      aria-label={`Mascot sprite — ${sprite.name}, mood ${mood}`}
       className="select-none [image-rendering:pixelated]"
     />
   );

@@ -26,7 +26,7 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["shared/*"],
-      "@clawd/*": ["assets-proprietary/clawd/*"]
+      "@mascot/*": ["assets/mascot/*"]
     }
   },
   "include": ["src", "shared"]
