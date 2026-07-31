@@ -35,7 +35,11 @@ export const UsageScreen: FC<Props> = ({ usage, settings }) => {
               label={t('usage.session.label')}
               pct={usage.s}
               warningPct={settings.usageWarningPct}
-              status={usage.st}
+              // Each bar carries its OWN window status. Both used to share the
+              // overall one, so a rejecting weekly limit painted the session bar
+              // red too and the screen lied about which limit had been hit.
+              status={usage.ss}
+              binding={usage.bind === 'session'}
             />
             <ResetCountdown minutes={usage.sr} />
           </div>
@@ -44,7 +48,8 @@ export const UsageScreen: FC<Props> = ({ usage, settings }) => {
               label={t('usage.weekly.label')}
               pct={usage.w}
               warningPct={settings.usageWarningPct}
-              status={usage.st}
+              status={usage.ws}
+              binding={usage.bind === 'weekly'}
             />
             <ResetCountdown minutes={usage.wr} />
           </div>

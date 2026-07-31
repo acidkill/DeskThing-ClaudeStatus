@@ -29,6 +29,15 @@ export const setupSettings = (): void => {
       type: SETTING_TYPES.BOOLEAN,
       value: DEFAULT_SETTINGS.splashEnabled,
     },
+    [SETTING_KEYS.splashRotateSec]: {
+      id: SETTING_KEYS.splashRotateSec,
+      label: 'Splash rotation (seconds)',
+      description: 'How long each mascot animation clip plays before the splash rotates to the next one.',
+      type: SETTING_TYPES.NUMBER,
+      value: DEFAULT_SETTINGS.splashRotateSec,
+      min: 2,
+      max: 300,
+    },
     [SETTING_KEYS.animationGroupOverride]: {
       id: SETTING_KEYS.animationGroupOverride,
       label: 'Mood override',

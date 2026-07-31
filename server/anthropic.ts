@@ -19,12 +19,22 @@ export class AnthropicError extends Error {
   }
 }
 
+/** Which rate-limit window is currently the binding constraint, when the API says. */
+export type LimitWindow = 'session' | 'weekly';
+
 export type RateLimitSnapshot = {
   sessionPct: number;
   sessionResetMin: number;
   weeklyPct: number;
   weeklyResetMin: number;
+  /** Overall status — drives the header pill and `ok`. */
   status: UsageStatus;
+  /** Status of the 5h window alone. */
+  sessionStatus: UsageStatus;
+  /** Status of the 7d window alone. */
+  weeklyStatus: UsageStatus;
+  /** The window Anthropic reports as representative right now, or null if unstated. */
+  bindingWindow: LimitWindow | null;
 };
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -75,6 +85,26 @@ const parseStatus = (raw: string | null): UsageStatus => {
   }
   return 'unknown';
 };
+
+// Probing the live API with this app's own OAuth token showed the response
+// carries a per-window status alongside the overall one, plus a claim naming the
+// window that is currently representative:
+//
+//   anthropic-ratelimit-unified-5h-status            = allowed
+//   anthropic-ratelimit-unified-7d-status            = allowed
+//   anthropic-ratelimit-unified-representative-claim = five_hour
+//
+// `five_hour` is verified. The seven-day spelling is NOT — on every probe this
+// account's binding window was the session one — so it is best-effort here, and
+// anything unrecognised maps to null. The UI then shows no badge at all rather
+// than pointing at the wrong bar.
+const CLAIM_WINDOWS: Record<string, LimitWindow> = {
+  five_hour: 'session',
+  seven_day: 'weekly',
+};
+
+const parseBindingWindow = (raw: string | null): LimitWindow | null =>
+  raw === null ? null : (CLAIM_WINDOWS[raw] ?? null);
 
 const parseRetryAfter = (raw: string | null): number | null => {
   if (!raw) return null;
@@ -129,6 +159,11 @@ export const pingAnthropic = async (
     weeklyPct: parsePct(headers.get('anthropic-ratelimit-unified-7d-utilization')),
     weeklyResetMin: parseResetMinutes(headers.get('anthropic-ratelimit-unified-7d-reset')),
     status: parseStatus(headers.get('anthropic-ratelimit-unified-status')),
+    sessionStatus: parseStatus(headers.get('anthropic-ratelimit-unified-5h-status')),
+    weeklyStatus: parseStatus(headers.get('anthropic-ratelimit-unified-7d-status')),
+    bindingWindow: parseBindingWindow(
+      headers.get('anthropic-ratelimit-unified-representative-claim'),
+    ),
   };
 
   if (response.ok) {

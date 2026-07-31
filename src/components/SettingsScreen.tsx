@@ -38,6 +38,7 @@ export const SettingsScreen: FC<Props> = ({ settings, error, onRefresh }) => {
           <Row label={t('settings.pollInterval')} value={`${settings.pollIntervalSec}s`} />
           <Row label={t('settings.credentialsPath')} value={settings.credentialsPath} />
           <Row label={t('settings.splashEnabled')} value={settings.splashEnabled ? '✓' : '✗'} />
+          <Row label={t('settings.splashRotateSec')} value={`${settings.splashRotateSec}s`} />
           <Row label={t('settings.moodOverride')} value={settings.animationGroupOverride} />
           <Row label={t('settings.warningThreshold')} value={`${settings.usageWarningPct}%`} />
         </div>

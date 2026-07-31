@@ -4,6 +4,8 @@
   "usage.session.label": "Session",
   "usage.weekly.label": "Weekly",
   "usage.resetIn": "resets in {time}",
+  "usage.binding": "Binding",
+  "usage.binding.aria": "the limit currently constraining work",
   "usage.status.allowed": "Allowed",
   "usage.status.allowed_warning": "Warning",
   "usage.status.rejecting": "Rejecting",

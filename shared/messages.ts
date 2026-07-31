@@ -3,12 +3,24 @@ export const APP_ID = 'claude-status' as const;
 export type UsageStatus = 'allowed' | 'allowed_warning' | 'rejecting' | 'unknown';
 export type Mood = 'idle' | 'active' | 'busy' | 'frantic';
 
+/** Which rate-limit window the API reports as currently binding. */
+export type LimitWindow = 'session' | 'weekly';
+
 export type UsagePayload = {
   s: number;
   sr: number;
   w: number;
   wr: number;
   st: UsageStatus;
+  /**
+   * Per-window statuses. The API reports these separately from the overall `st`,
+   * and both bars used to share `st` — so a rejecting weekly limit turned the
+   * session bar red too. Short keys keep the v1 wire convention (CLAUDE.md §2).
+   */
+  ss: UsageStatus;
+  ws: UsageStatus;
+  /** The window actually constraining work right now, or null if the API is silent. */
+  bind: LimitWindow | null;
   mood: Mood;
   ok: boolean;
   ts: number;

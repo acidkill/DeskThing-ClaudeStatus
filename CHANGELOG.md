@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file. Format: Keep a Changelog; versions follow SemVer.
 
+## [0.5.0] — 2026-07-31
+
+### Added — Host-keystroke dispatch, via platform-native backends
+- **`clawd:voice_ptt` and `clawd:mode_toggle` now actually reach the host.** `server/keys.ts` adds a `KeyDispatcher` that probes `osascript` (macOS), `xdotool` / `wtype` / `ydotool` (Linux, X11 or Wayland), or `powershell` (Windows) at startup and wires the two actions to send Space / Shift+Tab through whichever backend is available, resolving the "SDK has no host-keystroke API" limitation documented since v0.4.0.
+- `hostKeystrokeBackend` settings key (`auto` / a specific backend / `off`) with live reload when changed.
+- 18 new tests (`tests/server/keys.test.ts`) covering probe order, Wayland preference, fallback-to-`off`, per-backend CLI args, and dispatch failure handling.
+- This shipped to `main` as a separate, already-reviewed change (PR #9) alongside the work below; both land in the same tag since neither had been released yet.
+
+### Changed — Mascot rebuilt as a high-res vector rig
+- **Replaced the 20×20 pixel-art mascot with an original vector rig** (`src/mascot/`), rendered as inline SVG on one shared `viewBox="0 0 2048 2048"`. Source art: `assets/mascot-v2/clawdbot-master.svg`.
+- `casing.ts` — generated, 30 casing paths + 1 screen path. **Persona lock:** this block is emitted byte-identical across every one of the 20 animations and every frame within them, enforced by an extraction-based test that pulls the rendered markup back out of the component (an earlier draft of this guard hashed the source constant instead of the render output and would have passed regardless of what the component drew — replaced before it shipped).
+- `faces.ts` — 12 stroked LED expressions on the screen grid. `props.ts` — 9 props (power token, bubbles, book, rope, laptop, wand/blackboard, thought bubble, `djheadphones`, `djdeck`), each `attached` (worn/held, inherits body motion) or detached, and layered `behind`/`front`.
+- `animations.ts` — 20-clip catalogue, ids/names/categories carried over from the v1 pixel set for parity. `motion.ts` — pure scheduling policy (rotation interval, face-track gating, resting expression under reduced motion), no JSX, unit-testable without a DOM.
+- `MascotSprite.tsx` rewritten around the new modules; public API (`mood`, `size`, `rotateSec`) unchanged, so `SplashScreen` / `UsageScreen` / `SettingsScreen` needed no call-site edits.
+
+### Changed — Calmer, state-accurate mimicry
+- **The face no longer performs.** Measured on the previous catalogue, idle changed expression every 608 ms and cycled through nine of the twelve faces — `surprise` and `excited` included — while the mascot was meant to be resting; one clip ran `neutral → surprise → happy → focus → excited → happy` inside 3.5 s. It read as instability, not personality.
+- Replaced per-clip face tracks with a **base expression + punctuation** contract: a clip holds one calm face for seconds, interrupted only by a blink (or, in `active`, a brief wink/startle) that returns to the same face — so it never reads as an emotional change. Personality now comes from the prop and the body motion, not the mimicry.
+- `FACE_POLICY` (`src/mascot/animations.ts`) makes this a checked contract, not a comment: per mood it declares the allowed base palette, the minimum base hold, the punctuation ceiling, and the max distinct base expressions a clip may use. `tests/client/mascot-face-policy.test.ts` enforces it against every clip; `frantic` is explicitly exempted from the calm-down — fast, wide-ranging faces stay the correct signal at 90%+ utilisation.
+- Result, measured the same way: idle **99 → 0** base-face changes/min (blinks excluded — they return to the same face); active 0; busy ~19/min; frantic unchanged (~270/min, by design).
+- Relaxed the "every clip needs a unique opening expression" rule (added to fix invisible clip swaps) down to "unique opening (expression, prop, motion) triple" — the stricter version was itself what maximised face variety inside a mood and helped cause the problem above.
+
+### Fixed
+- `expression_sleep` inherited `active` mood routing from its v1 `Expressions` category, so an actively-working session could show a sleeping mascot — the one signal the splash screen exists to carry, inverted. Now explicitly routed to `idle`; its v1 category is kept for parity.
+- `work_blackboard` depicted a chalkboard where the v1 sprite's description was a magic wand with a star burst; art corrected to match.
+- DJ headphones were dropped from the initial vector port — `dance_bounce_dj` / `dance_sway_dj` got a full turntable console instead of the headphones-only look v1 gave them. Restored via a dedicated `djheadphones` prop, worn on the head rather than floating clear of it (an interim "zero casing overlap" routing rule mis-scoped the persona lock — a worn prop is *supposed* to sit on the casing, that's what wearing means; the lock is about the casing's own markup, not what sits on top of it).
+- `splashRotateSec` was parsed by the server but never registered in `setupSettings()`, so it was silently pinned to the default `20` regardless of what the user set. Registered.
+- Under `prefers-reduced-motion`, the rig froze on each clip's step-0 expression — but clips within a mood share their opening face, so three of the four moods collapsed onto one identical static sprite. Each mood now holds its own resting expression (`RESTING_EXPRESSION` in `motion.ts`) so the mood still reads with nothing moving.
+- A mood downshift could paint one blank frame: the animation cursor was reset in a post-paint effect, so the first commit after a shorter candidate list could read past its end. Clamped during render instead.
+- The `Session` and `Weekly` usage bars shared one overall status, so a rejecting weekly limit painted the session bar red too, even when the session itself was fine. Each bar now carries its own status (see below).
+
+### Added
+- **Per-window rate-limit status.** The Anthropic response carries `5h`/`7d` status separately from the overall one, plus a claim naming which window is currently binding — confirmed live against this app's own OAuth token (`anthropic-ratelimit-unified-5h-status`, `-7d-status`, `-representative-claim`). `UsagePayload` gained `ss`, `ws` (per-window status) and `bind` (`'session' | 'weekly' | null`); a **Binding** badge now marks whichever bar is the actual constraint. A Fable-specific weekly dimension was investigated and does not exist on this token's API surface (Haiku-only OAuth scope) — dropped from scope rather than shipped as dead UI.
+- `tests/client/mascot-face-policy.test.ts`, `mascot-catalogue.test.ts`, `mascot-persona-lock.test.tsx`, `mascot-prop-geometry.test.ts`, `mascot-reduced-motion.test.tsx` — six files covering the vector rig and the face-policy contract. Every new assertion was proven able to fail via a deliberate source mutation (then reverted, byte-identical) before being accepted, after two of its own guards turned out to be tautological (hashing a loop-invariant constant) or vacuous (asserting on `renderToStaticMarkup`, which never runs `useEffect`, in a suite with no DOM environment).
+
+### Removed
+- `src/mascot/sprites.ts` — dead v1 pixel-sprite loader, zero importers after the vector swap. `assets/mascot/*.json` kept as the v1 reference the vector catalogue was ported from.
+
+### Verified
+- `npx tsc --noEmit -p tsconfig.app.json`, `npm run typecheck`, `npm run lint`, `npm run build` (DeskThing package) all clean.
+- `npm test` — 284 tests across 13 files (268 from this work plus the 18 `tests/server/keys.test.ts` cases already on `main`), including live-rendered mutation checks on the persona lock, the motion-to-Tailwind-class table, and the face policy.
+- Live-verified against the running Anthropic API and against the DeskThing dev bridge attached to a real Car Thing session (without touching the production install already running on it): mascot face rhythm, and all three `UsageBar` states (session-binding, weekly-rejecting, no-binding) at the Car Thing's actual 800×480 resolution.
+
 ## [0.4.0] — 2026-05-26
 
 ### Changed — Mascot redesign, full Apache-2.0 status

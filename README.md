@@ -4,11 +4,11 @@ Live Claude Code session and weekly usage meters for the [Spotify Car Thing](htt
 
 ## Purpose
 
-- Show Claude Code session (5h) and weekly (7d) utilisation on the Car Thing's 800×480 display.
+- Show Claude Code session (5h) and weekly (7d) utilisation on the Car Thing's 800×480 display, each bar carrying its own rate-limit status and a badge on whichever window is currently the binding constraint.
 - Surface reset countdowns and rate-limit status without leaving the dashboard.
-- Drive the original orange-robot pixel-art mascot through six idle animations (breathe / blink / look around / power-token / status-pings / data-panel reading) plus expression, work, and dance pools that escalate with usage rate.
+- Drive the original orange-robot vector mascot through ten idle animations (breathe / blink / look around / power-token / status-pings / data-panel reading / head shake / walk / jump rope / dozing) plus expression, work, and dance pools that escalate with usage rate — one calm face per clip, not a carousel of them; see [Editing the mascot](#editing-the-mascot).
 - Bridge granular counter plateaus with cross-window activity memory so the mascot doesn't snap to idle while Claude is still working.
-- Register host-keystroke actions (push-to-talk, mode toggle) bindable via DeskThing's mappings UI.
+- Dispatch host-keystroke actions (push-to-talk, mode toggle) to the OS via a platform-native backend, bindable via DeskThing's mappings UI.
 - Run entirely through the DeskThing server/client architecture — no BLE, no systemd.
 
 ## Architecture
@@ -26,7 +26,7 @@ Live Claude Code session and weekly usage meters for the [Spotify Car Thing](htt
 ```
 
 - **Server** (`server/`, Node) is the only network caller. It reads the Claude Code OAuth token from disk, pings `POST https://api.anthropic.com/v1/messages` with a one-token Haiku call once per `pollIntervalSec`, parses the `anthropic-ratelimit-unified-*` headers, derives a mood, and broadcasts a typed `usage` payload over the DeskThing message bus.
-- **Client** (`src/`, React + Vite + Tailwind) listens for `usage`, `settings`, `error`, and `action:fired` events and renders the Usage / Splash / Settings screens. Offline by design — every asset (including mascot sprite JSONs) is bundled, no runtime CDN.
+- **Client** (`src/`, React + Vite + Tailwind) listens for `usage`, `settings`, `error`, and `action:fired` events and renders the Usage / Splash / Settings screens. Offline by design — the mascot is inline SVG compiled into the client bundle, no runtime CDN and no image requests.
 - **Shared** (`shared/messages.ts`) is the typed contract between server and client. Server uses relative imports (`../shared/messages`); the DeskThing CLI's esbuild server build does not honour tsconfig path aliases. Client uses the `@shared` Vite alias.
 
 See `CHANGELOG.md` for shipped work.
@@ -60,20 +60,48 @@ npm install
 
 The standard pre-PR loop: `npm run typecheck && npm run lint && npm test && npm run build`.
 
-### Regenerating mascot sprites
+### Editing the mascot
 
-All 17 mascot sprites are emitted by `scripts/sprite-pipeline/`:
+The mascot is a vector rig under `src/mascot/`, rendered as inline SVG on one shared
+`viewBox="0 0 2048 2048"`:
 
-- `robot-base.mjs` — defines the `BASE_NEUTRAL` 20×20 pose, palette (`#D97757` Anthropic-orange + screen-blue + antenna-red + dark + transparent), and composer helpers (eye states, antenna sway, body breathe/sway/bounce, expressions).
-- `generate-robot-sprites.mjs` — emits all 17 sprite JSONs plus the `_index.json` manifest.
+| File | Role |
+| --- | --- |
+| `casing.ts` | **Generated** from `assets/mascot-v2/clawdbot-master.svg` — 30 casing paths + 1 screen path. Do not hand-edit. |
+| `faces.ts` | The 12 LED expressions. Stroked glyphs only, drawn on the screen grid exported by `casing.ts`. |
+| `props.ts` | The prop layers (power token, bubbles, book, rope, laptop, wand/blackboard, thought bubble, DJ headphones, DJ deck), each flagged `attached` (worn/held) or detached, and layered `behind` or `front`. |
+| `animations.ts` | The 20-entry catalogue — id, name, category, motion, optional prop, LED face track — plus the mood → category mapping. |
+| `motion.ts` | Pure scheduling policy: clip-rotation period, whether the face track may run, and the per-mood resting expression used under reduced motion. No JSX, so it is unit-testable without a DOM. |
+| `MascotSprite.tsx` | Composites them and drives the face track; body motion comes from the `animate-motion-*` Tailwind keyframes. |
 
-Re-run after editing pose definitions or animation choreographies:
+**Persona lock:** `CASING_PATHS` and `SCREEN_PATHS` are emitted identically in every frame of
+every animation. An animation may only vary the LED face, the prop layer, and the CSS transform.
+Nothing may add, remove, recolour, or re-path the casing. This is *markup* identity, not pixel
+identity: a worn or held prop (headphones, a book, a wand) legitimately paints over casing pixels —
+that is what wearing and holding mean. A merely nearby prop such as the thought bubble must not,
+because a hole in the silhouette reads as a broken shell. No prop of any kind may cover the face
+screen. Re-export `casing.ts` from the master SVG rather than editing either by hand.
 
-```bash
-node scripts/sprite-pipeline/generate-robot-sprites.mjs
-```
+**Reduced motion:** under `prefers-reduced-motion: reduce` the rig stops every scheduler — no clip
+rotation, no face-track timeout, no `animate-motion-*` class. It does *not* freeze on the clip's
+step-0 expression, because clips within a mood share their opening face and three of the four moods
+would collapse onto one identical sprite. Instead each mood holds a characteristic resting
+expression from `RESTING_EXPRESSION` in `motion.ts` — idle → `neutral`, active → `happy`,
+busy → `focus`, frantic → `excited` — so the mood still reads at a glance while nothing moves.
 
-Output overwrites `assets/mascot/*.json`. Vite's `import.meta.glob` picks them up on the next build. The pipeline has its own minimal `node_modules` (only `pngjs` for offline inspection tooling); install once with `cd scripts/sprite-pipeline && npm install`.
+**Face policy — one calm expression, not a carousel:** a clip holds a single base expression for
+several seconds, interrupted only by punctuation (a blink; in `active`, a brief wink or startle)
+that returns to the same face rather than reading as a mood change. `FACE_POLICY` in
+`animations.ts` makes this a checked contract per mood — allowed base palette, minimum base hold,
+punctuation ceiling, max distinct base expressions — enforced by
+`tests/client/mascot-face-policy.test.ts`. Only `frantic` is exempt: fast, wide-ranging faces are
+the correct signal at 90%+ utilisation, not something to calm down. Mood routing can override a
+clip's v1 category via the optional `moods` field on `MascotAnimation` — used once, to route
+`expression_sleep` to `idle` instead of the `active` its `Expressions` category would otherwise
+imply, so an actively-working session can't show a sleeping mascot.
+
+The legacy 20×20 pixel-art pipeline in `scripts/sprite-pipeline/` and its output in
+`assets/mascot/*.json` are retained for reference only — the client no longer loads them.
 
 ## Install on a DeskThing server
 
@@ -89,12 +117,30 @@ Output overwrites `assets/mascot/*.json`. Vite's `import.meta.glob` picks them u
 | `pollIntervalSec`        | number     | `60`                           | `30..600`   | Seconds between Anthropic pings; below 30 may trip the rate limit. Changing it now restarts the auto-poll interval (was a bug ≤ v0.3.1). |
 | `credentialsPath`        | string     | `~/.claude/.credentials.json`  | —           | Server-side path. `~` expands to the host user's home.                  |
 | `splashEnabled`          | boolean    | `true`                         | —           | When idle → splash screen; when active/busy/frantic → usage stats.      |
+| `splashRotateSec`        | number     | `20`                           | `2..300`    | Seconds each mascot clip plays before the splash rotates to the next one. |
 | `animationGroupOverride` | select     | `auto`                         | see options | `auto` / `idle` / `active` / `busy` / `frantic` — forces a mood tier.   |
 | `usageWarningPct`        | range      | `80`                           | `1..100`    | Bars switch to warning colour at this utilisation.                      |
+| `hostKeystrokeBackend`   | select     | `auto`                         | see options | `auto` / `osascript` / `xdotool` / `wtype` / `ydotool` / `powershell` / `off` — which platform tool dispatches host keystrokes. `auto` probes available tools at startup. |
 
 Settings live on the DeskThing server and are pushed to the client via a typed `settings` message whenever they change.
 
-> `splashRotateSec` exists in `SettingsSnapshot` (default `20`) but is not currently registered in the DeskThing settings UI and is not read by any client component. The sprite-rotation cadence is hardcoded to `8` seconds inside `MascotSprite`. Wiring `splashRotateSec` through the settings form is a planned follow-up.
+## Usage display
+
+The Anthropic response carries a status **per rate-limit window**, not just one overall status —
+confirmed live against this app's own OAuth token: `anthropic-ratelimit-unified-5h-status`,
+`-7d-status`, and `-representative-claim` (the window currently constraining work). The server
+parses all three (`server/anthropic.ts`) into `UsagePayload.ss` (session status), `.ws` (weekly
+status), and `.bind` (`'session' | 'weekly' | null`).
+
+Each `UsageBar` renders its own window's status — a rejecting weekly limit no longer paints the
+session bar red as well — and the bar named by `.bind` gets a small **Binding** badge, so the
+screen shows at a glance which limit is actually the one being hit right now. `.bind` is `null`
+when Anthropic's claim is unrecognised; the badge is simply omitted rather than guessing.
+
+A **Weekly Fable** dimension was investigated for this release and does not exist on this app's
+API surface — the OAuth scope this server authenticates with (`oauth-2025-04-20`) only pings
+Haiku, and Haiku's response carries exactly the two windows above. It was dropped from scope
+rather than shipped as a permanently-empty third bar.
 
 ## Mood system
 
@@ -113,16 +159,24 @@ The memory signal (introduced in v0.3.2, count-based escalation added in v0.3.4)
 
 ### Sprite rotation
 
-Once a mood is derived, the client picks animations from a category pool and cycles between them every 8 seconds (hardcoded in `MascotSprite`):
+Once a mood is derived, the client picks animations from a category pool and cycles between them
+every `splashRotateSec` seconds (default `20`, floored at `2` by `MIN_ROTATE_SEC` in
+`src/mascot/motion.ts`). `MascotSprite` falls back to `8` seconds only when a caller renders it
+without a `rotateSec` prop; `SplashScreen` always passes the setting through.
 
 | Mood     | Pool         | Robot animations                                                                            |
 | -------- | ------------ | ------------------------------------------------------------------------------------------- |
-| idle     | `Idle`       | breathe, blink, look around, power-token, status-pings, data-panel reading                  |
-| active   | `Expressions`+`Idle` | wink, surprise, sleep + idle pool                                                   |
-| busy     | `Work`       | coding (keyboard tap + code-line pulses), blackboard (F=ma, E=mc²)                          |
-| frantic  | `Dance`      | bounce, sway, dj-mix (turntable + bounce + sway), bounce-dj, sway-dj                        |
+| idle     | `Idle` + `sleep` override | breathe, blink, look around, power-token, status-pings, data-panel reading, head shake, walk, jump rope, dozing |
+| active   | `Expressions` (minus `sleep`) | wink, surprise                                                                  |
+| busy     | `Work`       | coding (laptop), wand (star burst + sparkles)                                                |
+| frantic  | `Dance`      | bounce, sway, dj-mix, bounce-dj, sway-dj (headphones)                                        |
 
-All 17 animations are original 20×20 pixel art, generated procedurally by `scripts/sprite-pipeline/generate-robot-sprites.mjs`. `work_think` lives in the `Archive` category — present for parity but not in any mood's rotation pool. All sprite data lives under `assets/mascot/*.json` and is bundled into the client JS at build time via `import.meta.glob`.
+All 20 animations are original vector art defined in `src/mascot/` and inlined as SVG — see
+[Editing the mascot](#editing-the-mascot). `expression_sleep` is filed under the `Expressions`
+category for v1 parity but explicitly routed to `idle` (see the face-policy note above) — a
+sleeping mascot would otherwise be reachable from `active`. `active` lists `Idle` as a fallback
+pool, but `Expressions` always has hits, so the fallback never fires. `work_think` lives in the
+`Archive` category — catalogued for parity, but reachable by no mood.
 
 The mood thresholds in `MoodTracker` are calibrated for Sonnet 4.6 normal-use granularity. Opus 4.7 burns budget ~5× faster per token, so the same user behaviour escalates mood more aggressively on Opus — this is intentional and reflects the actual rate of budget consumption.
 
@@ -134,12 +188,20 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 | ------------------------ | ----------------------------------------------------------------------------------- |
 | `clawd:refresh_now`      | Triggers an immediate Anthropic poll (skipped if a poll is already in flight).      |
 | `clawd:cycle_animation`  | Cycles the client between Usage and Splash views.                                   |
-| `clawd:voice_ptt`        | **Limitation**: intended to send Space to the focused host window. Not dispatched. |
-| `clawd:mode_toggle`      | **Limitation**: intended to send Shift+Tab to the focused host window. Not dispatched. |
+| `clawd:voice_ptt`        | Sends Space to the host's focused window (push-to-talk for Claude Code voice mode). |
+| `clawd:mode_toggle`      | Sends Shift+Tab to the host's focused window.                                       |
 
-### Host-keystroke limitation
+### Host-keystroke dispatch
 
-`@deskthing/server` 0.11 does not expose a host-keystroke dispatch API. The two keystroke actions register and fire — the app receives an `action:fired` event and logs the call — but the SDK has no way to synthesise Space / Shift+Tab on the host's focused window.
+`server/keys.ts` probes the host at startup for a working keystroke backend —
+`osascript` (macOS), `xdotool` / `wtype` / `ydotool` (Linux, X11 or Wayland), or
+`powershell` (Windows) — and wires `clawd:voice_ptt` / `clawd:mode_toggle` to send
+Space / Shift+Tab through whichever one is available. `hostKeystrokeBackend`
+(above) pins a specific backend or disables dispatch (`off`); on a host with none
+of the above tools, probing resolves to `off` on its own and the actions still
+register and fire client-side, they just don't reach the OS. PTT fires a single
+keypress per action trigger — DeskThing's action API does not distinguish
+press/release, so a true press-and-hold isn't possible yet.
 
 ## Troubleshooting
 
@@ -151,12 +213,16 @@ All actions appear in the DeskThing mappings UI and can be bound to any physical
 - **Settings shows `anthropic:http:429`.** Rate-limited. The server backs off exponentially up to `pollIntervalSec × 8` (and honours `retry-after` if Anthropic sends one). Raise `pollIntervalSec` if this happens often.
 - **Settings shows `anthropic:timeout`.** Default request timeout is 15 s. Network issue between the DeskThing host and the Anthropic API.
 - **`usage.waiting` never goes away.** First poll hasn't completed yet — wait `pollIntervalSec + 5`. If it persists, check the server log for an error.
-- **Mappings don't fire host keys.** Known limitation — see above.
+- **Mappings don't fire host keys.** Check `hostKeystrokeBackend` in Settings — if it's `off`, no compatible tool was found on the host at startup (or it was set manually). Install `xdotool`/`wtype`/`ydotool` (Linux) or confirm `osascript`/`powershell` are reachable, then restart the app so the backend probe re-runs.
 
 ## Testing
 
-Run with `npm test`. Watch mode: `npm run test:watch`. Coverage: `npm run test:coverage`. Current suite: **69 tests** across 7 files exercising message contracts, credentials, Anthropic header parsing, mood signals (incl. plateau bridging + tick-count escalation), settings coercion, poller orchestration, and client format helpers.
+Run with `npm test`. Watch mode: `npm run test:watch`. Coverage: `npm run test:coverage`. Current suite: **284 tests** across 13 files exercising message contracts, credentials, Anthropic header parsing (incl. per-window status and the representative-claim binding window), host-keystroke backend probing/dispatch, mood signals (incl. plateau bridging + tick-count escalation), settings registration and coercion, poller orchestration, client format helpers, and the mascot rig (catalogue integrity and mood-routing overrides, persona lock via output extraction, prop geometry, reduced-motion scheduling policy, and the face-policy contract).
+
+The suite runs in Vitest's `node` environment — there is no jsdom, happy-dom, or Testing Library in
+this project. React effects therefore never run under test, so mascot behaviour driven by timers is
+tested through the pure functions in `src/mascot/motion.ts` rather than through rendered timers.
 
 ## Licensing
 
-Everything in this repository ships under the **Apache License 2.0** as of v0.4.0 — code, mascot sprites, manifests, icons. The previous proprietary-art dependency was retired when the mascot was swapped to an original orange-robot pixel-art set (anatomy inspired by Foozle's CC0 "Cute Platformer Robot"; all pixel data and choreographies are ours). Built ZIPs are freely redistributable. See `LICENSING.md` for the full inventory and attribution notes.
+Everything in this repository ships under the **Apache License 2.0** as of v0.4.0 — code, mascot art, manifests, icons. The previous proprietary-art dependency was retired when the mascot was swapped to an original orange robot: first a 20×20 pixel-art set, now the vector rig in `src/mascot/` drawn from `assets/mascot-v2/clawdbot-master.svg` (anatomy inspired by Foozle's CC0 "Cute Platformer Robot"; all path data and choreographies are ours). Built ZIPs are freely redistributable. See `LICENSING.md` for the full inventory and attribution notes.

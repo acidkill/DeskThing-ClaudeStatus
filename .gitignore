@@ -55,6 +55,7 @@ coverage/
 .claude/
 !.claude/settings.json
 !.claude/settings.local.json.example
+instincts/
 
 # Serena MCP memories (per-machine knowledge base, not source)
 .serena/
