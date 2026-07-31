@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. Format: Keep a Changelog; versions follow SemVer.
 
+## [0.5.1] — 2026-07-31
+
+### Fixed
+- `deskthing/icons/claude-status.svg` — the app-selector icon still shipped the blocky blue pixel-art robot from before the v2 vector rig, never updated when the mascot was redesigned in v0.5.0. Regenerated from the same `casing.ts` / `faces.ts` data the in-app mascot renders from (all 30 casing paths + the screen path, unmodified; `happy` expression), cropped to the head+ear band and centred in a square viewBox. Same persona-locked art, just a tighter camera crop for icon-sized rendering. Verified legible from 400px down to 48px.
+
 ## [0.5.0] — 2026-07-31
 
 ### Added — Host-keystroke dispatch, via platform-native backends
