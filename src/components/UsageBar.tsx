@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 
 import type { UsageStatus } from '../../shared/messages';
+import { t } from '../i18n';
 
 type Tone = 'ok' | 'warn' | 'err';
 
@@ -27,15 +28,27 @@ type Props = {
   pct: number;
   warningPct: number;
   status: UsageStatus;
+  /** Marks the window the API reports as currently constraining work. */
+  binding?: boolean;
 };
 
-export const UsageBar: FC<Props> = ({ label, pct, warningPct, status }) => {
+export const UsageBar: FC<Props> = ({ label, pct, warningPct, status, binding = false }) => {
   const safe = Math.max(0, Math.min(100, pct));
   const tone = toneFor(safe, warningPct, status);
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between">
-        <span className="text-sm uppercase tracking-widest text-clawd-muted">{label}</span>
+        <span className="flex items-baseline gap-2 text-sm uppercase tracking-widest text-clawd-muted">
+          {label}
+          {binding ? (
+            <span
+              title={t('usage.binding.aria')}
+              className="rounded-full border border-clawd-fg/30 px-2 py-px text-[10px] font-semibold tracking-widest text-clawd-fg/80"
+            >
+              {t('usage.binding')}
+            </span>
+          ) : null}
+        </span>
         <span className={`font-mono text-2xl tabular-nums ${TONE_TEXT[tone]}`}>
           {Math.round(safe)}
           <span className="text-base text-clawd-muted">%</span>

@@ -45,6 +45,34 @@ export default {
           '0%, 100%': { transform: 'rotate(-50deg)' },
           '50%': { transform: 'rotate(50deg)' },
         },
+        walk: {
+          '0%, 100%': { transform: 'translateY(0) rotate(-2.5deg)' },
+          '25%': { transform: 'translateY(-2%) rotate(0deg)' },
+          '50%': { transform: 'translateY(0) rotate(2.5deg)' },
+          '75%': { transform: 'translateY(-2%) rotate(0deg)' },
+        },
+        jump: {
+          '0%, 100%': { transform: 'translateY(0) scale(1, 1)' },
+          '18%': { transform: 'translateY(0) scale(1.06, 0.92)' },
+          '50%': { transform: 'translateY(-14%) scale(0.97, 1.05)' },
+          '82%': { transform: 'translateY(0) scale(1.04, 0.95)' },
+        },
+        sway: {
+          '0%, 100%': { transform: 'translateX(-2%) rotate(-4deg)' },
+          '50%': { transform: 'translateX(2%) rotate(4deg)' },
+        },
+        bounceSquash: {
+          '0%, 100%': { transform: 'translateY(0) scale(1.04, 0.94)' },
+          '45%': { transform: 'translateY(-9%) scale(0.98, 1.04)' },
+        },
+        lean: {
+          '0%, 100%': { transform: 'translateX(0) rotate(0deg)' },
+          '50%': { transform: 'translateX(-2.5%) rotate(-6deg)' },
+        },
+        nod: {
+          '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+          '50%': { transform: 'translateY(2%) rotate(3.5deg)' },
+        },
       },
       animation: {
         'mood-idle': 'breath 4s ease-in-out infinite',
@@ -57,6 +85,17 @@ export default {
         'gauge-active': 'gauge 3s ease-in-out infinite',
         'gauge-busy': 'gauge 1.2s ease-in-out infinite',
         'gauge-frantic': 'gauge 0.4s ease-in-out infinite',
+        // Mascot rig motions — one utility per Motion member in animations.ts.
+        // 'still' has no utility on purpose; the renderer applies no class.
+        'motion-breathe': 'breath 4s ease-in-out infinite',
+        'motion-bob': 'bob 1.6s ease-in-out infinite',
+        'motion-walk': 'walk 0.8s ease-in-out infinite',
+        'motion-jump': 'jump 1.1s ease-in-out infinite',
+        'motion-sway': 'sway 2s ease-in-out infinite',
+        'motion-bounce': 'bounceSquash 0.6s ease-in-out infinite',
+        'motion-shake': 'shake 0.18s linear infinite',
+        'motion-lean': 'lean 3s ease-in-out infinite',
+        'motion-nod': 'nod 1.4s ease-in-out infinite',
       },
     },
   },

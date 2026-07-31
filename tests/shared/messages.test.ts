@@ -39,7 +39,22 @@ describe('shared/messages', () => {
 
   it('discriminates ServerToClient variants by type', () => {
     const samples: ServerToClient[] = [
-      { type: 'usage', payload: { s: 1, sr: 1, w: 1, wr: 1, st: 'allowed', mood: 'idle', ok: true, ts: 0 } },
+      {
+        type: 'usage',
+        payload: {
+          s: 1,
+          sr: 1,
+          w: 1,
+          wr: 1,
+          st: 'allowed',
+          ss: 'allowed',
+          ws: 'allowed',
+          bind: 'session',
+          mood: 'idle',
+          ok: true,
+          ts: 0,
+        },
+      },
       { type: 'error', payload: { code: 'x', message: 'y' } },
       { type: 'settings', payload: DEFAULT_SETTINGS },
       { type: 'action:fired', payload: { id: ACTION_IDS.refreshNow } },

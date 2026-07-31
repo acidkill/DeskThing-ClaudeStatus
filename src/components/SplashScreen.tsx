@@ -6,12 +6,14 @@ import { t } from '../i18n';
 
 type Props = {
   mood: Mood;
+  /** Seconds between mascot clip swaps. Omitted falls back to MascotSprite's default. */
+  rotateSec?: number;
 };
 
-export const SplashScreen: FC<Props> = ({ mood }) => {
+export const SplashScreen: FC<Props> = ({ mood, rotateSec }) => {
   return (
     <section className="flex h-full w-full flex-col items-center justify-center gap-6">
-      <MascotSprite mood={mood} size={360} />
+      <MascotSprite mood={mood} size={360} rotateSec={rotateSec} />
       <div className="flex flex-col items-center gap-1">
         <p className="text-2xl font-semibold tracking-tight">{t('app.title')}</p>
         <p className="text-xs uppercase tracking-widest text-clawd-muted">

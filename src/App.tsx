@@ -55,7 +55,9 @@ const App: FC = () => {
 
       <div className="h-full w-full">
         {screen === 'usage' && <UsageScreen usage={usage} settings={settings} />}
-        {screen === 'splash' && <SplashScreen mood={mood} />}
+        {screen === 'splash' && (
+          <SplashScreen mood={mood} rotateSec={settings.splashRotateSec} />
+        )}
         {screen === 'settings' && (
           <SettingsScreen settings={settings} error={error} onRefresh={requestRefresh} />
         )}

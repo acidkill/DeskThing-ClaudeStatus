@@ -104,7 +104,49 @@ describe('pingAnthropic', () => {
       weeklyPct: 0,
       weeklyResetMin: 0,
       status: 'unknown',
+      // A missing per-window status must read as 'unknown', never as 'allowed':
+      // claiming a limit is fine when the API never said so is the one wrong
+      // answer available here.
+      sessionStatus: 'unknown',
+      weeklyStatus: 'unknown',
+      bindingWindow: null,
     });
+  });
+
+  it('reads the per-window statuses separately from the overall one', async () => {
+    // Shape verified against the live API with this app's own OAuth token.
+    installFetchMock(async () =>
+      okResponse({
+        'anthropic-ratelimit-unified-status': 'allowed_warning',
+        'anthropic-ratelimit-unified-5h-status': 'allowed',
+        'anthropic-ratelimit-unified-7d-status': 'rejecting',
+      }),
+    );
+    const snapshot = await pingAnthropic('tok');
+    expect(snapshot.status).toBe('allowed_warning');
+    expect(snapshot.sessionStatus).toBe('allowed');
+    expect(snapshot.weeklyStatus).toBe('rejecting');
+  });
+
+  it('maps the representative claim to the window it names', async () => {
+    installFetchMock(async () =>
+      okResponse({ 'anthropic-ratelimit-unified-representative-claim': 'five_hour' }),
+    );
+    expect((await pingAnthropic('tok')).bindingWindow).toBe('session');
+
+    installFetchMock(async () =>
+      okResponse({ 'anthropic-ratelimit-unified-representative-claim': 'seven_day' }),
+    );
+    expect((await pingAnthropic('tok')).bindingWindow).toBe('weekly');
+  });
+
+  it('reports no binding window rather than guessing at an unknown claim', async () => {
+    // Only `five_hour` has been observed live. Anything unrecognised must come
+    // back null so the UI shows no badge at all instead of flagging the wrong bar.
+    installFetchMock(async () =>
+      okResponse({ 'anthropic-ratelimit-unified-representative-claim': 'lunar_cycle' }),
+    );
+    expect((await pingAnthropic('tok')).bindingWindow).toBeNull();
   });
 
   it('throws AnthropicError(HTTP, 429) with retry-after when rate-limited', async () => {
